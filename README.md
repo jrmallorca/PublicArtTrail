@@ -18,3 +18,5 @@ the piece.
 Constraints: There will need to be a limit set on how many locations/artworks we can practically include in
 the initial prototype development. Ideally, we would want there to be flexibility for the app to be developed
 further, with the ability to add more content/artwork locations in future development cycles.
+
+:)
