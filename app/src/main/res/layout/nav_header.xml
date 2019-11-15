@@ -17,7 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingTop="8dp"
-        android:text="Public Art Trail"
+        android:text="@string/public_art_trail"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
     <TextView
