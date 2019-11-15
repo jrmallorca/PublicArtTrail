@@ -5,4 +5,5 @@
     <!-- Useful for screen readers (E.g. blind people who need to know what's happening on screen) -->
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="public_art_trail">Public Art Trail</string>
 </resources>
