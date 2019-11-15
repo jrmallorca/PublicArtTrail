@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- TODO: Make titles an @string resource instead of being hardcoded -->
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_mapview"
+            android:icon="@drawable/ic_mapview"
+            android:title="Map View" />
+        <item
+            android:id="@+id/nav_listview"
+            android:icon="@drawable/ic_listview"
+            android:title="List View" />
+    </group>
+
+    <item android:title="Trails">
+        <menu>
+            <item
+                android:id="@+id/nav_royalfortgardens"
+                android:title="Royal Fort Gardens" />
+        </menu>
+    </item>
+
+</menu>
