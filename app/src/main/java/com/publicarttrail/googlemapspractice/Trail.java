@@ -15,7 +15,6 @@ public class Trail extends MapFunctions{
 
     //irrelevant
     public ArrayList<ArtWork> artWorks = new ArrayList<>();
-
     //hashmap to store trail and its marker
     public Map<Marker, ArtWork> hashmap = new HashMap<>();
 
