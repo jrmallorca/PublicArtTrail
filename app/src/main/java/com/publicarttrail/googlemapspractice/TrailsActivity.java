@@ -46,6 +46,13 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
         ArtWork tyndallGate = new ArtWork("Tyndall Gate", new LatLng(51.458417, -2.603188));
         ArtWork followMe = new ArtWork("Follow Me", new LatLng(51.457620, -2.602613));
         ArtWork hollow = new ArtWork("Hollow", new LatLng(51.457470, -2.600915));
+        ArtWork phybuild = new ArtWork("Physics Building", new LatLng(51.458470, -2.602058));
+        ArtWork naturePond = new ArtWork("Nature Pond", new LatLng(51.457088, -2.601920));
+        ArtWork ivyGate = new ArtWork("Ivy Gate", new LatLng (51.458456, -2.601424));
+        ArtWork lizard = new ArtWork("Metalgnu Lizard", new LatLng(51.458830, -2.600851));
+        ArtWork verticalGarden = new ArtWork("Vertical Garden", new LatLng(51.458858, -2.600813));
+        ArtWork royalFortHouse = new ArtWork("Royal Fort House", new LatLng(51.458318, -2.603357));
+        ArtWork owl = new ArtWork("Metalgnu Owl", new LatLng(51.457987, -2.602257));
         Trail royalFort = new Trail(mMap, "Royal Fort Garden");
         Trail clifton = new Trail(mMap, "Clifton");
         royalFort.zoomInArea = new LatLng(51.457738, -2.602782);
@@ -56,6 +63,14 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
         royalFort.artWorks.add(tyndallGate);
         royalFort.artWorks.add(followMe);
         royalFort.artWorks.add(hollow);
+        royalFort.artWorks.add(phybuild);
+        royalFort.artWorks.add(naturePond);
+        royalFort.artWorks.add(ivyGate);
+        royalFort.artWorks.add(lizard);
+        royalFort.artWorks.add(verticalGarden);
+        royalFort.artWorks.add(royalFortHouse);
+        royalFort.artWorks.add(owl);
+
     }
 
 
