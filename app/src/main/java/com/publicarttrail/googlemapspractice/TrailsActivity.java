@@ -83,6 +83,7 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trails);
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         GetLastLocation();
         back = (Button) findViewById(R.id.button);
@@ -138,32 +139,28 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     }}
 
 
-//when a trail is selected, sets all trail markers invisible, creates markers for selected trail,
-// and sets the buttons and textview visible/
-// when art work/current location marker is selected, info window is shown
+    // When a trail is selected, sets all trail markers invisible, creates markers for selected trail,
+    // and sets the buttons and textview visible/
+    // when art work/current location marker is selected, info window is shown
     @Override
     public boolean onMarkerClick(Marker marker) {
-
-        if (artTrail.hashmap.containsKey(marker)){
+        if (artTrail.hashmap.containsKey(marker)) {
             for(Map.Entry element:artTrail.hashmap.entrySet()){
                 Marker key = (Marker)element.getKey();
                 key.setVisible(false);
             }
+
             trailSelected = artTrail.hashmap.get(marker);
             trailSelected.addMarkers();
             trailSelected.zoomIn();
             setVisibility(View.VISIBLE);
             trailName.setText(trailSelected.name);
             return false;
-        }
-
-        else if(trailSelected.hashmap.containsKey(marker)||marker.equals(currentLocationMarker)){
+        } else if (trailSelected.hashmap.containsKey(marker) ||
+                marker.equals(currentLocationMarker)) {
             marker.showInfoWindow();
             return true;
-        }
-
-        else return true;
-
+        } else return true;
     }
 
 
@@ -199,19 +196,22 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     ///////////////////functions part of the current location process
 
     private void GetLastLocation() {
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission to access location is missing
             ActivityCompat.requestPermissions(this, new String[]
                     {Manifest.permission.ACCESS_FINE_LOCATION}, Request_Code);
             return;
         }
+
         Task<Location> task = fusedLocationProviderClient.getLastLocation();
         task.addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
-                if (location!=null){
+                if (location != null) {
                     mlocation = location;
                     SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
-                            .findFragmentById(R.id.map);
+                            .findFragmentById(R.id.mapt);
                     supportMapFragment.getMapAsync(TrailsActivity.this);
                 }
             }
@@ -224,7 +224,8 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode){
             case Request_Code:
-                if (grantResults.length>0 && grantResults [0] ==PackageManager.PERMISSION_GRANTED){
+                if (grantResults.length > 0 &&
+                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     GetLastLocation();
                 }
                 break;
