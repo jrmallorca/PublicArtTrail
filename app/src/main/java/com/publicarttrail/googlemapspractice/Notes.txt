@@ -1,9 +1,10 @@
-MapsPage is just rough work, not really part of the project. It is safe to be
-deleted later on.
 MapsActivity was the activity that was there before(with navigation bars). Its been removed from
 the activity path for now.
 
-
+Bugs:
+1. It never reaches onMapReady.
+2. If I move the supportMapFragment stuff from GetLastLocation to onCreate, it reaches
+   onMapReady, but location is always null, even when I unlock it.
 
 Working
 

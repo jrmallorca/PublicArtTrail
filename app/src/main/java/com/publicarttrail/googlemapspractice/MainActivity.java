@@ -7,7 +7,7 @@ import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-//start page
+// The welcome screen
 public class MainActivity extends AppCompatActivity {
     private Button button;
 
@@ -15,16 +15,19 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        button = (Button) findViewById(R.id.button);
+
+        // Button to open MapsActivity
+        button = findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openTrailsActivity();
+                openMapsActivity();
             }
         });
     }
-    private void openTrailsActivity(){
-        Intent intent = new Intent(this, TrailsActivity.class);
+
+    private void openMapsActivity(){
+        Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
     }
 }
