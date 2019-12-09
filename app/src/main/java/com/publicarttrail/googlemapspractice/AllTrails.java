@@ -36,7 +36,7 @@ public class AllTrails extends MapFunctions{
         }
     }
 
-
+    //adjusts visibility of trail markers
     public void trailMarkersVisibility(Boolean bool){
 
         for(Map.Entry element:hashmap.entrySet()){
