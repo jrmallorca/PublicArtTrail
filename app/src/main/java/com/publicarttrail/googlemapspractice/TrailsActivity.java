@@ -78,6 +78,10 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     }
 
 
+// a new attribute was created - isCurrentLocSet - which basically states whether or not current
+// location marker is created. It makes it easier for showDisableCurrentLoc function logic.  It is
+// initially set to false in onCreate, and is set to true when user selects the button to show
+// current location and has agreed to enable access to permission. This is done in getLastLocation()
 
 
 //Starts off the map Activity and relevant location stuff, also creates the buttons and textview
@@ -88,13 +92,14 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trails);
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        isCurrentLocSet = false;
         SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         supportMapFragment.getMapAsync(TrailsActivity.this);
         createButtonsAndText();
     }
 
-
+    //create all the buttons and text views
     public void createButtonsAndText(){
         back = (Button) findViewById(R.id.button);
         back.setOnClickListener(new View.OnClickListener() {
@@ -134,6 +139,11 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
 
 
     //when the current location button is selected, show/hide current location
+    // if the current location marker was never created, it calls GetLastLocation which asks for
+    // permission if needed
+    // if the current location marker is already created, then the visibility is adjusted along with
+    // zoom in features.
+
     private void showDisableCurrentLocation(){
 
         if(!isCurrentLocSet) {
@@ -148,7 +158,7 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
             }
             else {
                 currentLocationMarker.setVisible(true);
-                trailSelected.calculateMiddlePoint(currentLocationMarker);
+                trailSelected.zoomFit(currentLocationMarker);
             }
         }
     }
@@ -162,10 +172,12 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
 
         if (artTrail.hashmap.containsKey(marker)) {
             trailSelected = artTrail.hashmap.get(marker);
+            //if selected trail has no artworks in it, do nothing (it used to zoom in the version before)
             if (trailSelected.hashmap.isEmpty()) {
                 return true;
             }
             else {
+                //same as before(just separated out as a function
                 setTrailMap();
                 return false;
             }
@@ -178,7 +190,7 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     }
 
 
-
+    //adjusts visibility of trails, artworks and buttons
     public void setTrailMap(){
         artTrail.trailMarkersVisibility(false);
         trailSelected.artworkMarkersVisibility(true);
@@ -200,7 +212,6 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
         artTrail.addMarkers();
         artTrail.zoomIn();
         mMap.setOnMarkerClickListener(this);
-        isCurrentLocSet = false;
 
     }
 
@@ -224,6 +235,9 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
 
     ///////////////////functions part of the current location process
 
+    //if the user denied in the beginning, the permission will appear again and continue to show current location if accepted the second time
+    //map is not created anymore here, as this process is done only when the user clicks on the show-location button. Map is now created in oncreate()
+    //if user accepted in either times, show the current loc marker and zoom appropriately, and set iscurrentLocSet to be true because current loc marker is created.
     private void GetLastLocation() {
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(this, new String[]
@@ -238,7 +252,7 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
                     mlocation = location;
                     isCurrentLocSet=true;
                     setCurrentLocationMarker();
-                    trailSelected.calculateMiddlePoint(currentLocationMarker);
+                    trailSelected.zoomFit(currentLocationMarker);
 
                 }
             }

@@ -39,6 +39,7 @@ public class Trail extends MapFunctions{
             }
         }
 
+        //adjusts visibility of artwork markers
         public void artworkMarkersVisibility(Boolean bool){
 
             for(Map.Entry element:hashmap.entrySet()){
@@ -48,8 +49,8 @@ public class Trail extends MapFunctions{
 
         }
 
-
-        public void calculateMiddlePoint(Marker currentposition){
+        //zoom to fit in all markers including current position (calculatemiddlepoint is renamed)
+        public void zoomFit(Marker currentposition){
             LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
             for(Map.Entry element:hashmap.entrySet()){
@@ -64,7 +65,7 @@ public class Trail extends MapFunctions{
             map.animateCamera(cu);
 
         }
-
+        //was the polyline function (not used)
         public void drawPolyline(){
 
         ArrayList<LatLng> positions = new ArrayList<>();
@@ -78,7 +79,7 @@ public class Trail extends MapFunctions{
             polyline.setVisible(true);
         }
 
-
+    //another zoom in function(not used)
     public void zoom(){
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
