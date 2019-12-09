@@ -32,7 +32,18 @@ public class AllTrails extends MapFunctions{
         for (Trail trail:trails){
             Marker marker =  map.addMarker(new MarkerOptions().position(trail.zoomInArea).title(trail.name).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
             hashmap.put(marker, trail);
+            trail.addMarkers();
         }
+    }
+
+
+    public void trailMarkersVisibility(Boolean bool){
+
+        for(Map.Entry element:hashmap.entrySet()){
+            Marker key = (Marker)element.getKey();
+            key.setVisible(bool);
+        }
+
     }
 
 

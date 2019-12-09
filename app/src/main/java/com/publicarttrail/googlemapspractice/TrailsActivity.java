@@ -2,6 +2,7 @@ package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
@@ -21,6 +22,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
@@ -38,6 +41,7 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     private Button currentLocationButton;
     private Marker currentLocationMarker;
     private TextView trailName;
+    private Boolean isCurrentLocSet;
 
 
     //This is just for an example. Later on, it will be linked with the database?
@@ -61,15 +65,15 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
         artTrail.trails.add(royalFort);
         artTrail.trails.add(clifton);
         royalFort.artWorks.add(tyndallGate);
-        royalFort.artWorks.add(followMe);
-        royalFort.artWorks.add(hollow);
+        royalFort.artWorks.add(owl);
         royalFort.artWorks.add(phybuild);
-        royalFort.artWorks.add(naturePond);
         royalFort.artWorks.add(ivyGate);
         royalFort.artWorks.add(lizard);
         royalFort.artWorks.add(verticalGarden);
         royalFort.artWorks.add(royalFortHouse);
-        royalFort.artWorks.add(owl);
+        royalFort.artWorks.add(hollow);
+        royalFort.artWorks.add(followMe);
+        //   royalFort.artWorks.add(naturePond);
 
     }
 
@@ -83,9 +87,15 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trails);
-
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        GetLastLocation();
+        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        supportMapFragment.getMapAsync(TrailsActivity.this);
+        createButtonsAndText();
+    }
+
+
+    public void createButtonsAndText(){
         back = (Button) findViewById(R.id.button);
         back.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -93,93 +103,104 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
                 goBack();
             }
         });
+
         currentLocationButton = (Button) findViewById(R.id.currentLocation);
         currentLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                showDisableCurrentLocation();
-            }
-        });
-
+            public void onClick(View v) { showDisableCurrentLocation();
+            }});
 
         trailName = (TextView) findViewById(R.id.nameOfTrail);
         trailName.setText(" ");
+
         setVisibility(View.INVISIBLE);
     }
 
 
 
-//when the back button is selected, the following method is implemented.
+    //when the back button is selected, the following method is implemented.
 // It sets all artwork and currentloc markers invisible and sets all trail markers visible.
 // Also sets buttons and trail name invisible
     private void goBack() {
-        for(Map.Entry element:trailSelected.hashmap.entrySet()){
-            Marker key = (Marker)element.getKey();
-            key.setVisible(false);
-
-        }
-        for(Map.Entry element:artTrail.hashmap.entrySet()) {
-            Marker key = (Marker) element.getKey();
-            key.setVisible(true);
-        }
+        trailSelected.artworkMarkersVisibility(false);
+        //  trailSelected.polyOptions.visible(false);
+        artTrail.trailMarkersVisibility(true);
         artTrail.zoomIn();
-        currentLocationMarker.setVisible(false);
+        if (isCurrentLocSet){ currentLocationMarker.setVisible(false); }
+        //currentLocationMarker.setVisible(false);
         setVisibility(View.INVISIBLE);
-
     }
 
 
-//when the current location button is selected, show/hide current location
-    private void showDisableCurrentLocation(){if(currentLocationMarker.isVisible()){
-        currentLocationMarker.setVisible(false);
-        trailSelected.zoomIn();
+
+    //when the current location button is selected, show/hide current location
+    private void showDisableCurrentLocation(){
+
+        if(!isCurrentLocSet) {
+            GetLastLocation();
+        }
+
+        else if (isCurrentLocSet){
+
+            if(currentLocationMarker.isVisible()){
+                currentLocationMarker.setVisible(false);
+                trailSelected.zoomIn();
+            }
+            else {
+                currentLocationMarker.setVisible(true);
+                trailSelected.calculateMiddlePoint(currentLocationMarker);
+            }
+        }
     }
-    else {currentLocationMarker.setVisible(true);
-        trailSelected.calculateMiddlePoint(currentLocationMarker);
-    }}
 
 
-    // When a trail is selected, sets all trail markers invisible, creates markers for selected trail,
-    // and sets the buttons and textview visible/
-    // when art work/current location marker is selected, info window is shown
+    //when a trail is selected, sets all trail markers invisible, creates markers for selected trail,
+// and sets the buttons and textview visible/
+// when art work/current location marker is selected, info window is shown
     @Override
     public boolean onMarkerClick(Marker marker) {
-        if (artTrail.hashmap.containsKey(marker)) {
-            for(Map.Entry element:artTrail.hashmap.entrySet()){
-                Marker key = (Marker)element.getKey();
-                key.setVisible(false);
-            }
 
+        if (artTrail.hashmap.containsKey(marker)) {
             trailSelected = artTrail.hashmap.get(marker);
-            trailSelected.addMarkers();
-            trailSelected.zoomIn();
-            setVisibility(View.VISIBLE);
-            trailName.setText(trailSelected.name);
-            return false;
-        } else if (trailSelected.hashmap.containsKey(marker) ||
-                marker.equals(currentLocationMarker)) {
+            if (trailSelected.hashmap.isEmpty()) {
+                return true;
+            }
+            else {
+                setTrailMap();
+                return false;
+            }
+        }
+        else if(trailSelected.hashmap.containsKey(marker)||marker.equals(currentLocationMarker)){
             marker.showInfoWindow();
             return true;
-        } else return true;
+        }
+        else return true;
     }
 
 
 
-//when the map is ready, add markers for all trails, sets current location, and creates a listener
+    public void setTrailMap(){
+        artTrail.trailMarkersVisibility(false);
+        trailSelected.artworkMarkersVisibility(true);
+        // Polyline polyline = mMap.addPolyline(new PolylineOptions().add(new LatLng(51.458417, -2.603188), new LatLng(51.458830, -2.600851), new LatLng(51.457620, -2.602613)).width(5).color(Color.RED));
+        //trailSelected.drawPolyline();
+        trailSelected.zoomIn();
+        setVisibility(View.VISIBLE);
+        trailName.setText(trailSelected.name);
+    }
+
+
+
+    //when the map is ready, add markers for all trails, sets current location, and creates a listener
 // for any marker selection
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         setArtTrail();
-
         artTrail.addMarkers();
         artTrail.zoomIn();
-        LatLng latLng = new LatLng(mlocation.getLatitude(), mlocation.getLongitude());
-        MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("Here!").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
-        currentLocationMarker = mMap.addMarker(markerOptions);
-        currentLocationMarker.setVisible(false);
         mMap.setOnMarkerClickListener(this);
+        isCurrentLocSet = false;
 
     }
 
@@ -190,29 +211,35 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     }
 
 
+    private void setCurrentLocationMarker(){
+
+        LatLng latLng = new LatLng(mlocation.getLatitude(), mlocation.getLongitude());
+        MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("You are here!").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+        currentLocationMarker = mMap.addMarker(markerOptions);
+        currentLocationMarker.setVisible(true);
+    }
+
 
 
 
     ///////////////////functions part of the current location process
 
     private void GetLastLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            // Permission to access location is missing
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED){
             ActivityCompat.requestPermissions(this, new String[]
                     {Manifest.permission.ACCESS_FINE_LOCATION}, Request_Code);
             return;
         }
-
         Task<Location> task = fusedLocationProviderClient.getLastLocation();
         task.addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
-                if (location != null) {
+                if (location!=null){
                     mlocation = location;
-                    SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
-                            .findFragmentById(R.id.mapt);
-                    supportMapFragment.getMapAsync(TrailsActivity.this);
+                    isCurrentLocSet=true;
+                    setCurrentLocationMarker();
+                    trailSelected.calculateMiddlePoint(currentLocationMarker);
+
                 }
             }
         });
@@ -224,11 +251,11 @@ public class TrailsActivity extends FragmentActivity implements OnMapReadyCallba
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode){
             case Request_Code:
-                if (grantResults.length > 0 &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length>0 && grantResults [0] ==PackageManager.PERMISSION_GRANTED){
                     GetLastLocation();
                 }
                 break;
         }
     }
 }
+
