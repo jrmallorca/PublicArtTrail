@@ -38,6 +38,22 @@ public class Trail {
         }
     }
 
+    public void addMarker(ArtWork artwork) {
+
+            Marker marker =  map.addMarker(new MarkerOptions().position(artwork.latLng).title(artwork.name).snippet(artwork.artistName));
+            hashmap.put(marker, artwork);
+            marker.setVisible(false);
+
+    }
+//adds marker and drawableid to the given hashmap
+    public void addToMarkerImageHashmap(Map<Marker,Integer> markerAndImage){
+
+        for (Map.Entry element:hashmap.entrySet()){
+            Marker marker = (Marker)element.getKey();
+            markerAndImage.put(marker, hashmap.get(marker).drawableId);
+        }
+    }
+
     public void zoomIn() {
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(zoomInArea, zoomFactor));
     }
