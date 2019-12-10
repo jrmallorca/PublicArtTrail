@@ -18,6 +18,8 @@ import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -30,10 +32,12 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TrailsActivity extends AppCompatActivity
-        implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener {
+        implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener {
 
     private GoogleMap mMap;
 
@@ -48,6 +52,8 @@ public class TrailsActivity extends AppCompatActivity
 
     private List<Trail> trails;
     private Trail trailSelected;
+    //map that contains the marker and corresponding image drawable int
+    private Map<Marker,Integer> markerAndImage = new HashMap<>();
 
 // a new attribute was created - isCurrentLocSet - which basically states whether or not current
 // location marker is created. It makes it easier for showDisableCurrentLoc function logic.  It is
@@ -104,11 +110,17 @@ public class TrailsActivity extends AppCompatActivity
 
         // Setting up mock data
         setArtTrail();
-
+        addToMarkerAndImage();
+        //custom infowindow set up (check newly created class)
+        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerAndImage);
+        //infowindows in this map will use format set in CustomInfoWindowAdapter
+        mMap.setInfoWindowAdapter(adapter);
         // Show the first trail's markers and zoom in
         trailSelected = trails.get(0);
         trailSelected.artworkMarkersVisibility(true);
         trailSelected.zoomIn();
+        mMap.setOnMarkerClickListener(this);
+
     }
 
     // -- BUTTONS --
@@ -126,6 +138,11 @@ public class TrailsActivity extends AppCompatActivity
                 break;
 
             case R.id.nav_clifton:
+                //hide markers from other trail
+                trailSelected.artworkMarkersVisibility(false);
+                if(isCurrentLocSet){
+                    currentLocationMarker.setVisible(false);
+                }
                 trailSelected = trails.get(1);
                 trailSelected.artworkMarkersVisibility(true);
                 trailSelected.zoomIn();
@@ -152,6 +169,11 @@ public class TrailsActivity extends AppCompatActivity
     // if the current location marker is already created, then the visibility is adjusted along with
     // zoom in features.
     private void showDisableCurrentLocation() {
+        //hide any open infowindows
+        for (Map.Entry element : markerAndImage.entrySet()) {
+            Marker key = (Marker) element.getKey();
+            key.hideInfoWindow();
+        }
         if (!isCurrentLocSet) {
             GetLastLocation();
 
@@ -175,17 +197,35 @@ public class TrailsActivity extends AppCompatActivity
     public void setArtTrail() {
         trails = new ArrayList<>();
 
-        // Creating artworks
+        // Creating artworks, with artist name and the image number they correspond to
         ArtWork tyndallGate = new ArtWork("Tyndall Gate", new LatLng(51.458417, -2.603188));
+        tyndallGate.artistName = "Humphry Repton";
+        tyndallGate.drawableId=R.drawable.error_image;
         ArtWork followMe = new ArtWork("Follow Me", new LatLng(51.457620, -2.602613));
+        followMe.artistName = "Jeppe Hein";
+        followMe.drawableId = R.drawable.follow_me;
         ArtWork hollow = new ArtWork("Hollow", new LatLng(51.457470, -2.600915));
+        hollow.artistName = "Katie Paterson";
+        hollow.drawableId = R.drawable.hollow;
         ArtWork phybuild = new ArtWork("Physics Building", new LatLng(51.458470, -2.602058));
-        ArtWork naturePond = new ArtWork("Nature Pond", new LatLng(51.457088, -2.601920));
+        phybuild.artistName ="George Oatlay";
+        phybuild.drawableId=R.drawable.physics_building;
+        //ArtWork naturePond = new ArtWork("Nature Pond", new LatLng(51.457088, -2.601920));
         ArtWork ivyGate = new ArtWork("Ivy Gate", new LatLng (51.458456, -2.601424));
+        ivyGate.artistName="---";
+        ivyGate.drawableId=R.drawable.ivy_gate;
         ArtWork lizard = new ArtWork("Metalgnu Lizard", new LatLng(51.458830, -2.600851));
+        lizard.artistName = "Julian P Warren";
+        lizard.drawableId=R.drawable.lizard;
         ArtWork verticalGarden = new ArtWork("Vertical Garden", new LatLng(51.458858, -2.600813));
-        ArtWork royalFortHouse = new ArtWork("Royal Fort House", new LatLng(51.458318, -2.603357));
+        verticalGarden.artistName="---";
+        verticalGarden.drawableId=R.drawable.vertical_garden;
+        ArtWork royalFortHouse = new ArtWork("Royal Fort House", new LatLng(51.457809, -2.601801));
+        royalFortHouse.artistName="Thomas Tyndall";
+        royalFortHouse.drawableId=R.drawable.royal_fort_house;
         ArtWork owl = new ArtWork("Metalgnu Owl", new LatLng(51.457987, -2.602257));
+        owl.artistName = "Julian P Warren";
+        owl.drawableId=R.drawable.owl;
 
         // Creating trails
         Trail royalFort = new Trail(mMap, "Royal Fort Garden");
@@ -195,21 +235,28 @@ public class TrailsActivity extends AppCompatActivity
         royalFort.zoomInArea = new LatLng(51.457738, -2.602782);
         clifton.zoomInArea = new LatLng(51.466401, -2.619686);
 
-        // Adding markers and artworks into trails
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(tyndallGate.latLng).title("Marker in Tyndall Gate")), tyndallGate);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(followMe.latLng).title("Marker in Follow Me")), followMe);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(hollow.latLng).title("Marker in Hollow")), hollow);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(phybuild.latLng).title("Marker in Physics Building")), phybuild);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(naturePond.latLng).title("Marker in Nature Pond")), naturePond);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(ivyGate.latLng).title("Marker in Ivy Gate")), ivyGate);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(lizard.latLng).title("Marker in Lizard")), lizard);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(verticalGarden.latLng).title("Marker in Vertical Garden")), verticalGarden);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(royalFortHouse.latLng).title("Marker in Royal Fort House")), royalFortHouse);
-        royalFort.hashmap.put(mMap.addMarker(new MarkerOptions().position(owl.latLng).title("Marker in Owl")), owl);
+
+        royalFort.addMarker(tyndallGate);
+        royalFort.addMarker(followMe);
+        royalFort.addMarker(hollow);
+        royalFort.addMarker(phybuild);
+        royalFort.addMarker(ivyGate);
+        royalFort.addMarker(lizard);
+        royalFort.addMarker(verticalGarden);
+        royalFort.addMarker(royalFortHouse);
+        royalFort.addMarker(owl);
 
         trails.add(royalFort);
         trails.add(clifton);
     }
+
+    //update markerimagehashmap
+    public void addToMarkerAndImage(){
+        for(Trail trail:trails){
+            trail.addToMarkerImageHashmap(markerAndImage);
+        }
+    }
+
 
     // Create location button
     public void createButtons() {
@@ -219,6 +266,28 @@ public class TrailsActivity extends AppCompatActivity
             public void onClick(View v) {
                 showDisableCurrentLocation();
             }});
+    }
+
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+
+        if(trailSelected.hashmap.containsKey(marker)){
+            //moves map to show infowindow (don't know how it works->copy-paste)
+            int zoom = (int)mMap.getCameraPosition().zoom;
+            CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new
+                    LatLng(marker.getPosition().latitude + (double)90/Math.pow(2, zoom),
+                    marker.getPosition().longitude), zoom);
+            mMap.animateCamera(cu,480,null);
+            marker.showInfoWindow();
+
+            return true;
+        }
+        else if(marker.equals(currentLocationMarker)){
+            //do nothing , dont show infowindow as there will be problems
+            return true;
+        }
+        else return true;
     }
 
     // -- LOCATION FUNCTIONALITIES --

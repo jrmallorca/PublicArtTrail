@@ -13,6 +13,9 @@ public class ArtWork {
     public String description;
     public LatLng latLng;
     public Picture picture;
+    //corresponds to int of drawable png
+    public Integer drawableId;
+
 
     ArtWork(String name, LatLng latLng){
         this.name = name;

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/box"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:textAlignment="center"
+        android:textColor="#ADCE0808"
+        android:textSize="18dp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tv_title"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:singleLine="false"
+        android:textColor="#050303"
+        android:textSize="14dp" />
+
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="246dp"
+        android:layout_height="239dp"
+        android:layout_below="@id/tv_subtitle"
+        android:layout_marginTop="5dp"
+        android:cropToPadding="false" />
+
+    <Button
+        android:id="@+id/viewMore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/imageView1"
+        android:layout_alignRight="@id/imageView1"
+        android:layout_marginTop="0dp"
+        android:text="View More"
+        android:textAllCaps="false" />
+
+</RelativeLayout>
+
