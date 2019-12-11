@@ -110,13 +110,18 @@ public class TrailsActivity extends AppCompatActivity
 
         // Setting up mock data
         setArtTrail();
+
         addToMarkerAndImage();
+
         //custom infowindow set up (check newly created class)
         CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerAndImage);
+
         //infowindows in this map will use format set in CustomInfoWindowAdapter
+
         mMap.setInfoWindowAdapter(adapter);
-        // Show the first trail's markers and zoom in
+        // Show the first trail's markers, set it as actionBar's title and zoom in
         trailSelected = trails.get(0);
+        setTitle(trailSelected.name);
         trailSelected.artworkMarkersVisibility(true);
         trailSelected.zoomIn();
         mMap.setOnMarkerClickListener(this);
@@ -132,23 +137,33 @@ public class TrailsActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.nav_royalfortgardens:
-                trailSelected = trails.get(0);
-                trailSelected.artworkMarkersVisibility(true);
-                trailSelected.zoomIn();
-                break;
+                if (trailSelected != trails.get(0)) {
+                    // Hide markers from previous trail
+                    trailSelected.artworkMarkersVisibility(false);
+                    if (isCurrentLocSet) currentLocationMarker.setVisible(false);
+
+                    trailSelected = trails.get(0);
+                    trailSelected.artworkMarkersVisibility(true);
+                    trailSelected.zoomIn();
+                    break;
+
+                } else break;
 
             case R.id.nav_clifton:
-                //hide markers from other trail
-                trailSelected.artworkMarkersVisibility(false);
-                if(isCurrentLocSet){
-                    currentLocationMarker.setVisible(false);
-                }
-                trailSelected = trails.get(1);
-                trailSelected.artworkMarkersVisibility(true);
-                trailSelected.zoomIn();
-                break;
+                if (trailSelected != trails.get(1)) {
+                    // Hide markers from previous trail
+                    trailSelected.artworkMarkersVisibility(false);
+                    if (isCurrentLocSet) currentLocationMarker.setVisible(false);
+
+                    trailSelected = trails.get(1);
+                    trailSelected.artworkMarkersVisibility(true);
+                    trailSelected.zoomIn();
+                    break;
+
+                } else break;
         }
 
+        setTitle(trailSelected.name);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -234,7 +249,6 @@ public class TrailsActivity extends AppCompatActivity
         // Setting up zoomInArea for trails
         royalFort.zoomInArea = new LatLng(51.457738, -2.602782);
         clifton.zoomInArea = new LatLng(51.466401, -2.619686);
-
 
         royalFort.addMarker(tyndallGate);
         royalFort.addMarker(followMe);
