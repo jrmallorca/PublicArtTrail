@@ -1,5 +1,6 @@
 package com.publicarttrail.googlemapspractice;
 
+import android.content.Context;
 import android.graphics.Color;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -11,14 +12,17 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Trail {
     // Hashmap to store trail and its marker
     public Map<Marker, ArtWork> hashmap = new HashMap<>();
+    public List<Marker> markers = new ArrayList<>();
     public String name;
     public LatLng zoomInArea;
     public float zoomFactor;
@@ -35,6 +39,7 @@ public class Trail {
         for (Map.Entry element : hashmap.entrySet()) {
             Marker key = (Marker) element.getKey();
             key.setVisible(bool);
+
         }
     }
 
@@ -43,6 +48,7 @@ public class Trail {
             Marker marker =  map.addMarker(new MarkerOptions().position(artwork.latLng).title(artwork.name).snippet(artwork.artistName));
             hashmap.put(marker, artwork);
             marker.setVisible(false);
+            markers.add(marker);
 
     }
 //adds marker and drawableid to the given hashmap
@@ -93,4 +99,43 @@ public class Trail {
 
         //map.animateCamera(cu);
     }
+    //creating url for json request
+    private String getUrl(LatLng origin, LatLng dest, String directionMode, List<LatLng> waypoints) {
+        // Origin of route
+        String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
+        // Destination of route
+        String str_dest = "destination=" + dest.latitude + "," + dest.longitude;
+        // Mode
+        String mode = "mode=" + directionMode;
+        // Building the parameters to the web service
+
+        String str_waypoints = "waypoints=";
+
+        for(int i=0; i<waypoints.size()-1; i++){
+            if (i!=waypoints.size()-1){
+                str_waypoints=str_waypoints+waypoints.get(i).latitude+","+waypoints.get(i).longitude+"|";
+            }
+            else str_waypoints = str_waypoints+waypoints.get(i).latitude+","+waypoints.get(i).longitude;
+        }
+
+        String parameters = str_origin + "&" + str_dest + "&" + str_waypoints + "&" + mode;
+        // Output format
+        String output = "json";
+        // Building the url to the web service
+        String url = "https://maps.googleapis.com/maps/api/directions/" + output + "?" + parameters + "&key=" + "AIzaSyBg2CwABbCb-ql9-_YtXA4mGDDI7X1nuU8";
+        return url;
+    }
+    //create array for waypoints
+    private List<LatLng> getWaypoints(List<Marker> markers){
+        List<LatLng> wayPoints = new ArrayList();
+        for(int i=1; i<markers.size()-1; i++){
+            wayPoints.add(markers.get(i).getPosition());
+        }
+        return wayPoints;
+    }
+    //request
+    public void showTrail(Context context){
+        new FetchURL(context).execute(getUrl(markers.get(0).getPosition(), markers.get(markers.size()-1).getPosition(), "walking", getWaypoints(markers)), "walking");
+    }
+
 }
