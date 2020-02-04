@@ -2,6 +2,7 @@ package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -24,20 +25,29 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Dash;
+import com.google.android.gms.maps.model.Dot;
+import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PatternItem;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
+import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
+import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class TrailsActivity extends AppCompatActivity
-        implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener {
+        implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener, TaskLoadedCallback {
 
     private GoogleMap mMap;
 
@@ -49,7 +59,7 @@ public class TrailsActivity extends AppCompatActivity
     private Button currentLocationButton;
     private Marker currentLocationMarker;
     private Boolean isCurrentLocSet;
-
+    private Polyline currentPolyline;
     private List<Trail> trails;
     private Trail trailSelected;
     //map that contains the marker and corresponding image drawable int
@@ -125,6 +135,7 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected.artworkMarkersVisibility(true);
         trailSelected.zoomIn();
         mMap.setOnMarkerClickListener(this);
+        trailSelected.showTrail(TrailsActivity.this);
 
     }
 
@@ -141,10 +152,11 @@ public class TrailsActivity extends AppCompatActivity
                     // Hide markers from previous trail
                     trailSelected.artworkMarkersVisibility(false);
                     if (isCurrentLocSet) currentLocationMarker.setVisible(false);
-
+                    if (currentPolyline!=null) currentPolyline.setVisible(false);
                     trailSelected = trails.get(0);
                     trailSelected.artworkMarkersVisibility(true);
                     trailSelected.zoomIn();
+                    trailSelected.showTrail(TrailsActivity.this);
                     break;
 
                 } else break;
@@ -152,10 +164,12 @@ public class TrailsActivity extends AppCompatActivity
             case R.id.nav_clifton:
                 if (trailSelected != trails.get(1)) {
                     // Hide markers from previous trail
+                    currentPolyline.setVisible(false);
                     trailSelected.artworkMarkersVisibility(false);
                     if (isCurrentLocSet) currentLocationMarker.setVisible(false);
 
                     trailSelected = trails.get(1);
+                    if(!trailSelected.markers.isEmpty()) trailSelected.showTrail(TrailsActivity.this);
                     trailSelected.artworkMarkersVisibility(true);
                     trailSelected.zoomIn();
                     break;
@@ -253,12 +267,13 @@ public class TrailsActivity extends AppCompatActivity
         royalFort.addMarker(tyndallGate);
         royalFort.addMarker(followMe);
         royalFort.addMarker(hollow);
-        royalFort.addMarker(phybuild);
-        royalFort.addMarker(ivyGate);
-        royalFort.addMarker(lizard);
-        royalFort.addMarker(verticalGarden);
         royalFort.addMarker(royalFortHouse);
         royalFort.addMarker(owl);
+        royalFort.addMarker(ivyGate);
+        royalFort.addMarker(phybuild);
+        royalFort.addMarker(lizard);
+        royalFort.addMarker(verticalGarden);
+
 
         trails.add(royalFort);
         trails.add(clifton);
@@ -350,5 +365,31 @@ public class TrailsActivity extends AppCompatActivity
                 break;
         }
     }
+
+
+
+    //polyline features
+    @Override
+    public void onTaskDone(Object... values) {
+        if (currentPolyline != null)
+            currentPolyline.remove();
+        currentPolyline = mMap.addPolyline((PolylineOptions) values[0]);
+        List<PatternItem> pattern = Arrays.<PatternItem>asList(new Dot(), new Gap(20));
+        currentPolyline.setColor(Color.BLUE);
+        currentPolyline.setPattern(pattern);
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
