@@ -8,8 +8,8 @@ import retrofit2.http.Path;
 
 public interface TrailsClient {
     @GET("/trails")
-    Call<List<Trail>> getTrails();
+    Call<List<Trailv2>> getTrails();
 
     @GET("/trails/{id}")
-    Call<List<Trail>> getTrail(@Path("id") long id);
+    Call<List<Trailv2>> getTrail(@Path("id") long id);
 }
