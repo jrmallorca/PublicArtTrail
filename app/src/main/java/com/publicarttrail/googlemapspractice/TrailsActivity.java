@@ -1,19 +1,25 @@
 package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -24,6 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Dash;
 import com.google.android.gms.maps.model.Dot;
@@ -59,7 +66,11 @@ public class TrailsActivity extends AppCompatActivity
     private Button currentLocationButton;
     private Marker currentLocationMarker;
     private Boolean isCurrentLocSet;
-    private Polyline currentPolyline;
+    private Polyline trailPolyline;
+    private Polyline locationPolyline;
+    private Boolean askingForDirection = false;
+
+
     private List<Trail> trails;
     private Trail trailSelected;
     //map that contains the marker and corresponding image drawable int
@@ -151,8 +162,11 @@ public class TrailsActivity extends AppCompatActivity
                 if (trailSelected != trails.get(0)) {
                     // Hide markers from previous trail
                     trailSelected.artworkMarkersVisibility(false);
-                    if (isCurrentLocSet) currentLocationMarker.setVisible(false);
-                    if (currentPolyline!=null) currentPolyline.setVisible(false);
+                    if (isCurrentLocSet){
+                        currentLocationMarker.setVisible(false);
+                        locationPolyline.setVisible(false);
+                    }
+                    if (trailPolyline!=null) trailPolyline.setVisible(false);
                     trailSelected = trails.get(0);
                     trailSelected.artworkMarkersVisibility(true);
                     trailSelected.zoomIn();
@@ -164,9 +178,12 @@ public class TrailsActivity extends AppCompatActivity
             case R.id.nav_clifton:
                 if (trailSelected != trails.get(1)) {
                     // Hide markers from previous trail
-                    currentPolyline.setVisible(false);
+                    trailPolyline.setVisible(false);
                     trailSelected.artworkMarkersVisibility(false);
-                    if (isCurrentLocSet) currentLocationMarker.setVisible(false);
+                    if (isCurrentLocSet){
+                        currentLocationMarker.setVisible(false);
+
+                    }
 
                     trailSelected = trails.get(1);
                     if(!trailSelected.markers.isEmpty()) trailSelected.showTrail(TrailsActivity.this);
@@ -209,12 +226,17 @@ public class TrailsActivity extends AppCompatActivity
         } else if (isCurrentLocSet) {
             if (currentLocationMarker.isVisible()) {
                 currentLocationMarker.setVisible(false);
+                locationPolyline.setVisible(false);
                 trailSelected.zoomIn();
+
 
             } else {
                 currentLocationMarker.setVisible(true);
                 // TODO: May need fixing so that it more accurately tells the user of the location
                 trailSelected.zoomFit(currentLocationMarker);
+                askingForDirection = true;
+                trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+
             }
         }
     }
@@ -264,15 +286,15 @@ public class TrailsActivity extends AppCompatActivity
         royalFort.zoomInArea = new LatLng(51.457738, -2.602782);
         clifton.zoomInArea = new LatLng(51.466401, -2.619686);
 
-        royalFort.addMarker(tyndallGate);
-        royalFort.addMarker(followMe);
-        royalFort.addMarker(hollow);
-        royalFort.addMarker(royalFortHouse);
-        royalFort.addMarker(owl);
-        royalFort.addMarker(ivyGate);
-        royalFort.addMarker(phybuild);
-        royalFort.addMarker(lizard);
-        royalFort.addMarker(verticalGarden);
+        royalFort.addMarker(tyndallGate, TrailsActivity.this);
+        royalFort.addMarker(followMe, TrailsActivity.this);
+        royalFort.addMarker(hollow,TrailsActivity.this);
+        royalFort.addMarker(royalFortHouse, TrailsActivity.this);
+        royalFort.addMarker(owl, TrailsActivity.this);
+        royalFort.addMarker(phybuild, TrailsActivity.this);
+        royalFort.addMarker(ivyGate, TrailsActivity.this);
+        royalFort.addMarker(lizard, TrailsActivity.this);
+        royalFort.addMarker(verticalGarden, TrailsActivity.this);
 
 
         trails.add(royalFort);
@@ -352,6 +374,9 @@ public class TrailsActivity extends AppCompatActivity
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         currentLocationMarker = mMap.addMarker(markerOptions);
         currentLocationMarker.setVisible(true);
+        askingForDirection = true;
+        trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+
     }
 
     // Result on whether user accepted permission or not
@@ -368,25 +393,32 @@ public class TrailsActivity extends AppCompatActivity
 
 
 
-    //polyline features
+    //when url comes
     @Override
     public void onTaskDone(Object... values) {
-        if (currentPolyline != null)
-            currentPolyline.remove();
-        currentPolyline = mMap.addPolyline((PolylineOptions) values[0]);
+
+
+        PolylineOptions polylineOptions = (PolylineOptions) values[0];
         List<PatternItem> pattern = Arrays.<PatternItem>asList(new Dot(), new Gap(20));
-        currentPolyline.setColor(Color.BLUE);
-        currentPolyline.setPattern(pattern);
+
+        //if polyline is for direction from current location to the trail
+        if (askingForDirection) {
+
+            locationPolyline = mMap.addPolyline(polylineOptions);
+            locationPolyline.setColor(Color.RED);
+            locationPolyline.setPattern(pattern);
+            askingForDirection = false;
+        }
+        //if polyline is for trail
+        else {
+
+            trailPolyline = mMap.addPolyline(polylineOptions);
+            trailPolyline.setColor(Color.BLUE);
+            trailPolyline.setPattern(pattern);
+
+        }
 
     }
-
-
-
-
-
-
-
-
 
 
 
