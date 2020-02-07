@@ -53,6 +53,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class TrailsActivity extends AppCompatActivity
         implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener, TaskLoadedCallback {
 
@@ -70,6 +74,40 @@ public class TrailsActivity extends AppCompatActivity
     private Polyline locationPolyline;
     private Boolean askingForDirection = false;
 
+    TrailsClient trailsClient = RetrofitSingleton
+            .getRetrofit()
+            .create(TrailsClient.class);
+
+    ArtClient artClient = RetrofitSingleton
+            .getRetrofit()
+            .create(ArtClient.class);
+
+    private Callback<List<Trailv2>> trailsCallback = new Callback<List<Trailv2>>() {
+        @Override
+        public void onResponse(Call<List<Trailv2>> call, Response<List<Trailv2>> response) {
+            trailsv2 = response.body();
+        }
+
+        @Override
+        public void onFailure(Call<List<Trailv2>> call, Throwable t) {
+            t.printStackTrace();
+        }
+    };
+
+    Callback<List<ArtWorkv2>> artworksCallback = new Callback<List<ArtWorkv2>>() {
+        @Override
+        public void onResponse(Call<List<ArtWorkv2>> call, Response<List<ArtWorkv2>> response) {
+            artWorksv2 = response.body();
+        }
+
+        @Override
+        public void onFailure(Call<List<ArtWorkv2>> call, Throwable t) {
+            t.printStackTrace();
+        }
+    };
+
+    List<Trailv2> trailsv2;
+    List<ArtWorkv2> artWorksv2;
 
     private List<Trail> trails;
     private Trail trailSelected;
@@ -248,35 +286,8 @@ public class TrailsActivity extends AppCompatActivity
     public void setArtTrail() {
         trails = new ArrayList<>();
 
-        // Creating artworks, with artist name and the image number they correspond to
-        ArtWork tyndallGate = new ArtWork("Tyndall Gate", new LatLng(51.458417, -2.603188));
-        tyndallGate.artistName = "Humphry Repton";
-        tyndallGate.drawableId=R.drawable.error_image;
-        ArtWork followMe = new ArtWork("Follow Me", new LatLng(51.457620, -2.602613));
-        followMe.artistName = "Jeppe Hein";
-        followMe.drawableId = R.drawable.follow_me;
-        ArtWork hollow = new ArtWork("Hollow", new LatLng(51.457470, -2.600915));
-        hollow.artistName = "Katie Paterson";
-        hollow.drawableId = R.drawable.hollow;
-        ArtWork phybuild = new ArtWork("Physics Building", new LatLng(51.458470, -2.602058));
-        phybuild.artistName ="George Oatlay";
-        phybuild.drawableId=R.drawable.physics_building;
-        //ArtWork naturePond = new ArtWork("Nature Pond", new LatLng(51.457088, -2.601920));
-        ArtWork ivyGate = new ArtWork("Ivy Gate", new LatLng (51.458456, -2.601424));
-        ivyGate.artistName="---";
-        ivyGate.drawableId=R.drawable.ivy_gate;
-        ArtWork lizard = new ArtWork("Metalgnu Lizard", new LatLng(51.458830, -2.600851));
-        lizard.artistName = "Julian P Warren";
-        lizard.drawableId=R.drawable.lizard;
-        ArtWork verticalGarden = new ArtWork("Vertical Garden", new LatLng(51.458858, -2.600813));
-        verticalGarden.artistName="---";
-        verticalGarden.drawableId=R.drawable.vertical_garden;
-        ArtWork royalFortHouse = new ArtWork("Royal Fort House", new LatLng(51.457809, -2.601801));
-        royalFortHouse.artistName="Thomas Tyndall";
-        royalFortHouse.drawableId=R.drawable.royal_fort_house;
-        ArtWork owl = new ArtWork("Metalgnu Owl", new LatLng(51.457987, -2.602257));
-        owl.artistName = "Julian P Warren";
-        owl.drawableId=R.drawable.owl;
+        trailsClient.getTrails().clone().enqueue(trailsCallback);
+        artClient.getArtworks().clone().enqueue(artworksCallback);
 
         // Creating trails
         Trail royalFort = new Trail(mMap, "Royal Fort Garden");
