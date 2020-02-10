@@ -21,17 +21,12 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
         button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openTrailsActivity();
-            }
-        });
+        button.setOnClickListener(v -> openTrailsActivity());
 
-        logo = (ImageView) findViewById(R.id.logo);
-
+        logo = findViewById(R.id.logo);
         logo.setImageResource(R.drawable.web_hi_res_512);
     }
+
     private void openTrailsActivity(){
         Intent intent = new Intent(this, TrailsActivity.class);
         startActivity(intent);
