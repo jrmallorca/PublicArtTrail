@@ -3,7 +3,6 @@ package com.publicarttrail.googlemapspractice;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 
 import androidx.core.content.ContextCompat;
@@ -17,8 +16,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
 import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 
 import java.util.ArrayList;
@@ -54,7 +51,10 @@ public class Trail {
 
     public void addMarker(ArtWork artwork, Context context) {
 
-            Marker marker =  map.addMarker(new MarkerOptions().position(artwork.latLng).title(artwork.name).snippet(artwork.artistName).icon(bitmapDescriptorFromVector(context, numbermarker(markers.size()+1)) ));
+            Marker marker = map.addMarker(new MarkerOptions().position(artwork.latLng)
+                                                             .title(artwork.name)
+                                                             .snippet(artwork.artistName)
+                                                             .icon(bitmapDescriptorFromVector(context, numbermarker(markers.size()+1)) ));
             hashmap.put(marker, artwork);
             marker.setVisible(false);
             markers.add(marker);

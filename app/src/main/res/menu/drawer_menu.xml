@@ -3,28 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <!-- TODO: Make titles an @string resource instead of being hardcoded -->
-    <!-- checkableBehaviour="single" means you can only select one option -->
-    <!-- Options for Map View or List View -->
-<!--    <group android:checkableBehavior="single">-->
-<!--        <item-->
-<!--            android:id="@+id/nav_mapview"-->
-<!--            android:icon="@drawable/ic_mapview"-->
-<!--            android:title="Map View" />-->
-<!--        <item-->
-<!--            android:id="@+id/nav_listview"-->
-<!--            android:icon="@drawable/ic_listview"-->
-<!--            android:title="List View" />-->
-<!--    </group>-->
-
     <!-- Options for trails -->
-    <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/nav_royalfortgardens"
-            android:title="Royal Fort Gardens" />
-        <item
-            android:id="@+id/nav_clifton"
-            android:title="Clifton" />
-    </group>
+    <group
+        android:id="@+id/nav_trailsGroup"
+        android:checkableBehavior="single"/>
 
 </menu>

@@ -1,25 +1,20 @@
 package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
@@ -30,9 +25,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.Dash;
 import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
@@ -44,7 +37,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
-import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
 
 import java.util.ArrayList;
@@ -62,8 +54,11 @@ public class TrailsActivity extends AppCompatActivity
 
     private GoogleMap mMap;
 
+    // Navigation menu attributes
     private DrawerLayout drawer;
+    private NavigationView navigationView;
 
+    // Location attributes
     Location mlocation;
     FusedLocationProviderClient fusedLocationProviderClient;
     private static final int Request_Code = 101;
@@ -78,38 +73,51 @@ public class TrailsActivity extends AppCompatActivity
             .getRetrofit()
             .create(TrailsClient.class);
 
-    ArtClient artClient = RetrofitSingleton
-            .getRetrofit()
-            .create(ArtClient.class);
-
-    private Callback<List<Trailv2>> trailsCallback = new Callback<List<Trailv2>>() {
+    private Callback<List<BaseTrail>> trailsCallback = new Callback<List<BaseTrail>>() {
         @Override
-        public void onResponse(Call<List<Trailv2>> call, Response<List<Trailv2>> response) {
-            trailsv2 = response.body();
+        public void onResponse(Call<List<BaseTrail>> call, Response<List<BaseTrail>> response) {
+            trails = new ArrayList<>();
+
+            // Creating trails and artworks
+            // TODO: 09/02/2020 Edit later so that BaseTrail and Trail are just one class
+            for (BaseTrail t : response.body()) {
+                Trail trail = new Trail(mMap, t.getName());
+                // TODO: 09/02/2020 NO ENCAPSULATION!!! Use a setter instead of invoking the attribute
+                trail.zoomInArea = new LatLng(t.getLatitude(), t.getLongitude());
+
+                for (BaseArtwork a : t.getArtworks()) {
+                    ArtWork artWork = new ArtWork(a.getName(), new LatLng(a.getLatitude(), a.getLongitude()));
+                    artWork.
+
+                    trail.addMarker(artWork, TrailsActivity.this);
+                }
+
+                trails.add(trail);
+            }
+
+            // Setting up menu of drawer
+            Menu menu = navigationView.getMenu();
+            // TODO: 09/02/2020 Replace this counter with id from BaseTrail
+            for (int i = 0; i < trails.size(); ++i) {
+                // TODO: 09/02/2020 NO ENCAPSULATION!!! Use a getter for name instead of invoking the attribute
+                menu.add(R.id.nav_trailsGroup, i, Menu.NONE, trails.get(i).name);
+            }
+
+            // Setting up the map
+            SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
+            supportMapFragment.getMapAsync(TrailsActivity.this);
         }
 
         @Override
-        public void onFailure(Call<List<Trailv2>> call, Throwable t) {
+        public void onFailure(Call<List<BaseTrail>> call, Throwable t) {
             t.printStackTrace();
         }
     };
 
-    Callback<List<ArtWorkv2>> artworksCallback = new Callback<List<ArtWorkv2>>() {
-        @Override
-        public void onResponse(Call<List<ArtWorkv2>> call, Response<List<ArtWorkv2>> response) {
-            artWorksv2 = response.body();
-        }
-
-        @Override
-        public void onFailure(Call<List<ArtWorkv2>> call, Throwable t) {
-            t.printStackTrace();
-        }
-    };
-
-    List<Trailv2> trailsv2;
-    List<ArtWorkv2> artWorksv2;
-
+    // Selecting trails attributes
     private List<Trail> trails;
+    // TODO: 09/02/2020 Possibility to replace this with id from BaseTrails???
     private Trail trailSelected;
     //map that contains the marker and corresponding image drawable int
     private Map<Marker,Integer> markerAndImage = new HashMap<>();
@@ -126,13 +134,18 @@ public class TrailsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trails);
 
+        // Give BaseTrails and BaseArtworks a list of their respective objects through GET request
+        trailsClient.getTrails()
+                .clone()
+                .enqueue(trailsCallback);
+
         // Setting up the toolbar we created as the actionBar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         // Setting up the drawer
         drawer = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
         // Setting up the hamburger icon
@@ -143,19 +156,13 @@ public class TrailsActivity extends AppCompatActivity
 
         // This accounts for rotation, opening app again, etc.
         if (savedInstanceState == null) {
-            // TODO: Properly set it so Royal Fort Gardens trail is shown first
-            // Set Royal Fort Gardens trail as selected item
-            navigationView.setCheckedItem(R.id.nav_royalfortgardens);
+            // Set first trail (Royal Fort Gardens) as selected item
+            navigationView.setCheckedItem(0);
         }
 
         // Setting up location
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         isCurrentLocSet = false;
-
-        // Setting up the map
-        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        supportMapFragment.getMapAsync(TrailsActivity.this);
 
         // Create the buttons
         createButtons();
@@ -166,9 +173,6 @@ public class TrailsActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        // Setting up mock data
-        setArtTrail();
 
         addToMarkerAndImage();
 
@@ -185,51 +189,29 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected.zoomIn();
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this);
-
     }
 
     // -- BUTTONS --
 
     // TODO: Make this better
+    // TODO: 09/02/2020 Jonquil needs to understand what code beyond hiding markers do
     // Depending on the menuItem, do an action then close drawer
     // If we return false, no item will be selected even if the action was triggered
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-        switch (menuItem.getItemId()) {
-            case R.id.nav_royalfortgardens:
-                if (trailSelected != trails.get(0)) {
-                    // Hide markers from previous trail
-                    trailSelected.artworkMarkersVisibility(false);
-                    if (isCurrentLocSet){
-                        currentLocationMarker.setVisible(false);
-                        locationPolyline.setVisible(false);
-                    }
-                    if (trailPolyline!=null) trailPolyline.setVisible(false);
-                    trailSelected = trails.get(0);
-                    trailSelected.artworkMarkersVisibility(true);
-                    trailSelected.zoomIn();
-                    trailSelected.showTrail(TrailsActivity.this);
-                    break;
+        if (trailSelected != trails.get(menuItem.getItemId())) {
+            // Hide markers from previous trail
+            trailSelected.artworkMarkersVisibility(false);
+            if (isCurrentLocSet){
+                currentLocationMarker.setVisible(false);
+                locationPolyline.setVisible(false);
+            }
 
-                } else break;
-
-            case R.id.nav_clifton:
-                if (trailSelected != trails.get(1)) {
-                    // Hide markers from previous trail
-                    trailPolyline.setVisible(false);
-                    trailSelected.artworkMarkersVisibility(false);
-                    if (isCurrentLocSet){
-                        currentLocationMarker.setVisible(false);
-
-                    }
-
-                    trailSelected = trails.get(1);
-                    if(!trailSelected.markers.isEmpty()) trailSelected.showTrail(TrailsActivity.this);
-                    trailSelected.artworkMarkersVisibility(true);
-                    trailSelected.zoomIn();
-                    break;
-
-                } else break;
+            if (trailPolyline != null) trailPolyline.setVisible(false);
+            trailSelected = trails.get(menuItem.getItemId());
+            trailSelected.artworkMarkersVisibility(true);
+            trailSelected.zoomIn();
+            trailSelected.showTrail(TrailsActivity.this);
         }
 
         setTitle(trailSelected.name);
@@ -281,37 +263,6 @@ public class TrailsActivity extends AppCompatActivity
 
     // -- FUNCTIONALITIES --
 
-    // Sets up mock data.
-    // TODO: Replace with mock data from database
-    public void setArtTrail() {
-        trails = new ArrayList<>();
-
-        trailsClient.getTrails().clone().enqueue(trailsCallback);
-        artClient.getArtworks().clone().enqueue(artworksCallback);
-
-        // Creating trails
-        Trail royalFort = new Trail(mMap, "Royal Fort Garden");
-        Trail clifton = new Trail(mMap, "Clifton");
-
-        // Setting up zoomInArea for trails
-        royalFort.zoomInArea = new LatLng(51.457738, -2.602782);
-        clifton.zoomInArea = new LatLng(51.466401, -2.619686);
-
-        royalFort.addMarker(tyndallGate, TrailsActivity.this);
-        royalFort.addMarker(followMe, TrailsActivity.this);
-        royalFort.addMarker(hollow,TrailsActivity.this);
-        royalFort.addMarker(royalFortHouse, TrailsActivity.this);
-        royalFort.addMarker(owl, TrailsActivity.this);
-        royalFort.addMarker(phybuild, TrailsActivity.this);
-        royalFort.addMarker(ivyGate, TrailsActivity.this);
-        royalFort.addMarker(lizard, TrailsActivity.this);
-        royalFort.addMarker(verticalGarden, TrailsActivity.this);
-
-
-        trails.add(royalFort);
-        trails.add(clifton);
-    }
-
     //update markerimagehashmap
     public void addToMarkerAndImage(){
         for(Trail trail:trails){
@@ -323,11 +274,7 @@ public class TrailsActivity extends AppCompatActivity
     // Create location button
     public void createButtons() {
         currentLocationButton = findViewById(R.id.currentLocation);
-        currentLocationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showDisableCurrentLocation();
-            }});
+        currentLocationButton.setOnClickListener(v -> showDisableCurrentLocation());
     }
 
 

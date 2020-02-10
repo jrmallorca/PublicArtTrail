@@ -2,21 +2,12 @@ package com.publicarttrail.googlemapspractice;
 
 import java.util.List;
 
-public class Trailv2 {
+public class BaseTrail {
     private long id;
     private String name;
     private double latitude;
     private double longitude;
-    private List<ArtWorkv2> artworks;
-
-    public Trailv2() {}
-
-    // Custom constructor when an instance is to be created but we don't have an id
-    public Trailv2(String name, double latitude, double longitude) {
-        this.name = name;
-        this.latitude = latitude;
-        this.longitude = longitude;
-    }
+    private List<BaseArtwork> artworks;
 
     public long getId() {
         return id;
@@ -34,7 +25,7 @@ public class Trailv2 {
         return longitude;
     }
 
-    public List<ArtWorkv2> getArtworks() {
+    public List<BaseArtwork> getArtworks() {
         return artworks;
     }
 }

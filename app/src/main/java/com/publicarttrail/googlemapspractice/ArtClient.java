@@ -8,8 +8,8 @@ import retrofit2.http.Path;
 
 public interface ArtClient {
     @GET("/artworks")
-    Call<List<ArtWorkv2>> getArtworks();
+    Call<List<BaseArtwork>> getArtworks();
 
     @GET("/artworks/{id}")
-    Call<List<ArtWorkv2>> getArtwork(@Path("id") long id);
+    Call<List<BaseArtwork>> getArtwork(@Path("id") long id);
 }
