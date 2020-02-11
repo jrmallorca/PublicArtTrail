@@ -34,14 +34,6 @@ public class Artwork {
         return description;
     }
 
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
     public int getDrawableId() {
         return drawableId;
     }

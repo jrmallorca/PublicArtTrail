@@ -33,15 +33,14 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         //also consists of picture that is retrieved using drawableId attribute of artwork
 
         //adjust individual formats according to xml
-        TextView tvTitle = (TextView) view.findViewById(R.id.tv_title);
-        TextView tvSubTitle = (TextView) view.findViewById(R.id.tv_subtitle);
-        ImageView im = (ImageView) view.findViewById(R.id.imageView1);
+        TextView tvTitle = view.findViewById(R.id.tv_title);
+        TextView tvSubTitle = view.findViewById(R.id.tv_subtitle);
+        ImageView im = view.findViewById(R.id.imageView1);
 
         //set text and image
         tvTitle.setText(marker.getTitle());
         tvSubTitle.setText(marker.getSnippet());
-         im.setImageResource(markerAndImage.get(marker));
-
+        im.setImageResource(markerAndImage.get(marker));
 
         return view;
     }
