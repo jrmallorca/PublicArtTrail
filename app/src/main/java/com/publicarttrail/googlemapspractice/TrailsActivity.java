@@ -144,9 +144,10 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected = trails.get(0);
         setTitle(trailSelected.name);
         trailSelected.artworkMarkersVisibility(true);
-        trailSelected.zoomIn();
+        trailSelected.zoomIn(TrailsActivity.this);
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this);
+
 
     }
 
@@ -169,7 +170,7 @@ public class TrailsActivity extends AppCompatActivity
                     if (trailPolyline!=null) trailPolyline.setVisible(false);
                     trailSelected = trails.get(0);
                     trailSelected.artworkMarkersVisibility(true);
-                    trailSelected.zoomIn();
+                    trailSelected.zoomIn(TrailsActivity.this);
                     trailSelected.showTrail(TrailsActivity.this);
                     break;
 
@@ -188,7 +189,7 @@ public class TrailsActivity extends AppCompatActivity
                     trailSelected = trails.get(1);
                     if(!trailSelected.markers.isEmpty()) trailSelected.showTrail(TrailsActivity.this);
                     trailSelected.artworkMarkersVisibility(true);
-                    trailSelected.zoomIn();
+                    trailSelected.zoomIn(TrailsActivity.this);
                     break;
 
                 } else break;
@@ -227,7 +228,7 @@ public class TrailsActivity extends AppCompatActivity
             if (currentLocationMarker.isVisible()) {
                 currentLocationMarker.setVisible(false);
                 locationPolyline.setVisible(false);
-                trailSelected.zoomIn();
+                trailSelected.zoomIn(TrailsActivity.this);
 
 
             } else {

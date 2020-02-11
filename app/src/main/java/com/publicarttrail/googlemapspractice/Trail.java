@@ -71,11 +71,11 @@ public class Trail {
         }
     }
 
-    public void zoomIn() {
+    public void zoomIn(Context context) {
        // map.moveCamera(CameraUpdateFactory.newLatLngZoom(zoomInArea, zoomFactor));
         int padding = 70; // offset from edges of the map in pixels
         LatLngBounds bounds = builder.build();
-        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, context.getResources().getDisplayMetrics().widthPixels, context.getResources().getDisplayMetrics().heightPixels, padding);
         map.moveCamera(cu);
 
     }
