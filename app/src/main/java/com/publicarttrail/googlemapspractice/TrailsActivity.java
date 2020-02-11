@@ -7,7 +7,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -38,6 +37,10 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
+import com.publicarttrail.googlemapspractice.networking.RetrofitService;
+import com.publicarttrail.googlemapspractice.networking.TrailsClient;
+import com.publicarttrail.googlemapspractice.pojo.Artwork;
+import com.publicarttrail.googlemapspractice.pojo.Trail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,38 +72,27 @@ public class TrailsActivity extends AppCompatActivity
     private Polyline locationPolyline;
     private Boolean askingForDirection = false;
 
-    TrailsClient trailsClient = RetrofitSingleton
+    // Selecting trails attributes
+    // TODO: 11/02/2020 Consider making static in RetrofitService so as to only do GET once
+    private List<Trail> trails = new ArrayList<>();
+    // TODO: 09/02/2020 Possibility to replace this with id from Trail???
+    private Trail trailSelected;
+    //map that contains the marker and corresponding image drawable int
+    private Map<Marker,Integer> markerAndImage = new HashMap<>();
+
+    TrailsClient trailsClient = RetrofitService
             .getRetrofit()
             .create(TrailsClient.class);
 
-    private Callback<List<BaseTrail>> trailsCallback = new Callback<List<BaseTrail>>() {
+    private Callback<List<Trail>> trailsCallback = new Callback<List<Trail>>() {
         @Override
-        public void onResponse(Call<List<BaseTrail>> call, Response<List<BaseTrail>> response) {
-            trails = new ArrayList<>();
-
-            // Creating trails and artworks
-            // TODO: 09/02/2020 Edit later so that BaseTrail and Trail are just one class
-            for (BaseTrail t : response.body()) {
-                Trail trail = new Trail(mMap, t.getName());
-                // TODO: 09/02/2020 NO ENCAPSULATION!!! Use a setter instead of invoking the attribute
-                trail.zoomInArea = new LatLng(t.getLatitude(), t.getLongitude());
-
-                for (BaseArtwork a : t.getArtworks()) {
-                    ArtWork artWork = new ArtWork(a.getName(), new LatLng(a.getLatitude(), a.getLongitude()));
-                    artWork.
-
-                    trail.addMarker(artWork, TrailsActivity.this);
-                }
-
-                trails.add(trail);
-            }
+        public void onResponse(Call<List<Trail>> call, Response<List<Trail>> response) {
+            trails = response.body();
 
             // Setting up menu of drawer
             Menu menu = navigationView.getMenu();
-            // TODO: 09/02/2020 Replace this counter with id from BaseTrail
-            for (int i = 0; i < trails.size(); ++i) {
-                // TODO: 09/02/2020 NO ENCAPSULATION!!! Use a getter for name instead of invoking the attribute
-                menu.add(R.id.nav_trailsGroup, i, Menu.NONE, trails.get(i).name);
+            for (Trail t : trails) {
+                menu.add(R.id.nav_trailsGroup, (int) t.getId(), Menu.NONE, t.getName());
             }
 
             // Setting up the map
@@ -110,17 +102,10 @@ public class TrailsActivity extends AppCompatActivity
         }
 
         @Override
-        public void onFailure(Call<List<BaseTrail>> call, Throwable t) {
+        public void onFailure(Call<List<Trail>> call, Throwable t) {
             t.printStackTrace();
         }
     };
-
-    // Selecting trails attributes
-    private List<Trail> trails;
-    // TODO: 09/02/2020 Possibility to replace this with id from BaseTrails???
-    private Trail trailSelected;
-    //map that contains the marker and corresponding image drawable int
-    private Map<Marker,Integer> markerAndImage = new HashMap<>();
 
 // a new attribute was created - isCurrentLocSet - which basically states whether or not current
 // location marker is created. It makes it easier for showDisableCurrentLoc function logic.  It is
@@ -174,6 +159,17 @@ public class TrailsActivity extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        // Set map for all trails
+        for (Trail t : trails) {
+            t.setMap(mMap);
+
+            // TODO: 11/02/2020 Fix this (setting artwork's drawable id but might just use image soon in BaseTrails)
+            for (Artwork a : t.getArtworks()) {
+                a.setDrawableId(R.drawable.error_image);
+                t.addMarker(a, TrailsActivity.this);
+            }
+        }
+
         addToMarkerAndImage();
 
         //custom infowindow set up (check newly created class)
@@ -184,7 +180,7 @@ public class TrailsActivity extends AppCompatActivity
         mMap.setInfoWindowAdapter(adapter);
         // Show the first trail's markers, set it as actionBar's title and zoom in
         trailSelected = trails.get(0);
-        setTitle(trailSelected.name);
+        setTitle(trailSelected.getName());
         trailSelected.artworkMarkersVisibility(true);
         trailSelected.zoomIn();
         mMap.setOnMarkerClickListener(this);
@@ -214,7 +210,7 @@ public class TrailsActivity extends AppCompatActivity
             trailSelected.showTrail(TrailsActivity.this);
         }
 
-        setTitle(trailSelected.name);
+        setTitle(trailSelected.getName());
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
@@ -281,7 +277,7 @@ public class TrailsActivity extends AppCompatActivity
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        if(trailSelected.hashmap.containsKey(marker)){
+        if(trailSelected.getArtworkMap().containsKey(marker)){
             //moves map to show infowindow (don't know how it works->copy-paste)
             int zoom = (int)mMap.getCameraPosition().zoom;
             CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new
@@ -312,16 +308,13 @@ public class TrailsActivity extends AppCompatActivity
             return;
         }
         Task<Location> task = fusedLocationProviderClient.getLastLocation();
-        task.addOnSuccessListener(new OnSuccessListener<Location>() {
-            @Override
-            public void onSuccess(Location location) {
-                if (location != null){
-                    mlocation = location;
-                    isCurrentLocSet = true;
-                    setCurrentLocationMarker();
-                    trailSelected.zoomFit(currentLocationMarker);
+        task.addOnSuccessListener(location -> {
+            if (location != null){
+                mlocation = location;
+                isCurrentLocSet = true;
+                setCurrentLocationMarker();
+                trailSelected.zoomFit(currentLocationMarker);
 
-                }
             }
         });
     }
@@ -357,7 +350,7 @@ public class TrailsActivity extends AppCompatActivity
 
 
         PolylineOptions polylineOptions = (PolylineOptions) values[0];
-        List<PatternItem> pattern = Arrays.<PatternItem>asList(new Dot(), new Gap(20));
+        List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(20));
 
         //if polyline is for direction from current location to the trail
         if (askingForDirection) {
