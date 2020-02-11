@@ -33,7 +33,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
@@ -96,6 +95,7 @@ public class TrailsActivity extends AppCompatActivity
             }
 
             // Setting up the map
+            // Must be called here so that we can guarantee trails isn't null
             SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
             supportMapFragment.getMapAsync(TrailsActivity.this);
@@ -176,8 +176,8 @@ public class TrailsActivity extends AppCompatActivity
         CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerAndImage);
 
         //infowindows in this map will use format set in CustomInfoWindowAdapter
-
         mMap.setInfoWindowAdapter(adapter);
+
         // Show the first trail's markers, set it as actionBar's title and zoom in
         trailSelected = trails.get(0);
         setTitle(trailSelected.getName());
@@ -236,36 +236,32 @@ public class TrailsActivity extends AppCompatActivity
             Marker key = (Marker) element.getKey();
             key.hideInfoWindow();
         }
+
         if (!isCurrentLocSet) {
             GetLastLocation();
-
         } else if (isCurrentLocSet) {
             if (currentLocationMarker.isVisible()) {
                 currentLocationMarker.setVisible(false);
                 locationPolyline.setVisible(false);
                 trailSelected.zoomIn();
-
-
             } else {
                 currentLocationMarker.setVisible(true);
                 // TODO: May need fixing so that it more accurately tells the user of the location
                 trailSelected.zoomFit(currentLocationMarker);
                 askingForDirection = true;
                 trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-
             }
         }
     }
 
     // -- FUNCTIONALITIES --
 
-    //update markerimagehashmap
+    // Update markerimagehashmap
     public void addToMarkerAndImage(){
         for(Trail trail:trails){
             trail.addToMarkerImageHashmap(markerAndImage);
         }
     }
-
 
     // Create location button
     public void createButtons() {

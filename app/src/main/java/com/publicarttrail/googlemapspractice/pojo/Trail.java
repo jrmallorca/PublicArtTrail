@@ -49,14 +49,6 @@ public class Trail {
         return name;
     }
 
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
     public List<Artwork> getArtworks() {
         return artworks;
     }
@@ -75,7 +67,7 @@ public class Trail {
         Marker marker = map.addMarker(new MarkerOptions().position(artwork.getLatLng())
                 .title(artwork.getName())
                 .snippet(artwork.getCreator())
-                // TODO: 11/02/2020 Replace numberMarker parameter with Trail id? 
+                // TODO: 11/02/2020 Replace numberMarker parameter with Artwork id?
                 .icon(bitmapDescriptorFromVector(context, numberMarker(markers.size() + 1))));
         artworkMap.put(marker, artwork);
         marker.setVisible(false);
@@ -139,7 +131,7 @@ public class Trail {
 
     // Zoom to fit in all markers including current position (calculatemiddlepoint is renamed)
     public void zoomFit(Marker currentPosition) {
-        // TODO: 10/02/2020 Find out why there is another builder used instead of attribute
+        // TODO: 10/02/2020 Jonquil needs to find out why there is another builder used instead of attribute
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
         for (Map.Entry element : artworkMap.entrySet()) {
@@ -188,12 +180,12 @@ public class Trail {
         String mode = "mode=" + directionMode;
 
         // Building the parameters to the web service
-        String str_waypoints = "waypoints=";
+        StringBuilder str_waypoints = new StringBuilder("waypoints=");
 
         for (int i = 0; i < waypoints.size() - 1; i++) {
             if (i != waypoints.size() - 1) {
-                str_waypoints = str_waypoints + waypoints.get(i).latitude + "," + waypoints.get(i).longitude + "|";
-            } else str_waypoints = str_waypoints + waypoints.get(i).latitude + "," + waypoints.get(i).longitude;
+                str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude).append("|");
+            } else str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude);
         }
 
         String parameters = str_origin + "&" + str_dest + "&" + str_waypoints + "&" + mode;
@@ -228,7 +220,7 @@ public class Trail {
 
     // Create array for waypoints
     private List<LatLng> getWaypoints(List<Marker> markers) {
-        List<LatLng> wayPoints = new ArrayList();
+        List<LatLng> wayPoints = new ArrayList<>();
         for (int i = 1; i < markers.size() - 1; i++) {
             wayPoints.add(markers.get(i).getPosition());
         }
@@ -237,13 +229,22 @@ public class Trail {
 
     // Request
     public void showTrail(Context context) {
-        new FetchURL(context).execute(getUrl(markers.get(0).getPosition(), markers.get(markers.size()-1).getPosition(), "walking", getWaypoints(markers)), "walking");
+        new FetchURL(context)
+                .execute(getUrl(markers.get(0).getPosition(),
+                                markers.get(markers.size()-1).getPosition(),
+                   "walking",
+                                getWaypoints(markers)),
+                         "walking");
     }
 
     // --- Location methods ---
 
     // Get direction from current location to trail (still related to trails^^)
     public void getDirection(Context context, LatLng currentLocation) {
-        new FetchURL(context).execute(getUrl2(currentLocation, markers.get(0).getPosition(), "driving"), "driving");
+        new FetchURL(context)
+                .execute(getUrl2(currentLocation,
+                                 markers.get(0).getPosition(),
+                    "driving"),
+                         "driving");
     }
 }
