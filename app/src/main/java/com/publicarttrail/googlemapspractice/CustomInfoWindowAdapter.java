@@ -7,17 +7,19 @@ import android.widget.TextView;
 
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
+import com.publicarttrail.googlemapspractice.pojo.Trail;
 
-import java.util.Map;
+import java.util.List;
+import java.util.Objects;
 
 public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
 
     private Activity context;
-    private Map<Marker,Integer> markerAndImage;
+    private List<Trail> trails;
 
-    public CustomInfoWindowAdapter(Activity context, Map<Marker,Integer> markerAndImage){
+    public CustomInfoWindowAdapter(Activity context, List<Trail> trails){
         this.context = context;
-        this.markerAndImage = markerAndImage;
+        this.trails = trails;
     }
 
     @Override
@@ -40,8 +42,11 @@ public class CustomInfoWindowAdapter implements GoogleMap.InfoWindowAdapter {
         //set text and image
         tvTitle.setText(marker.getTitle());
         tvSubTitle.setText(marker.getSnippet());
-        im.setImageResource(markerAndImage.get(marker));
-
+        for (Trail t : trails) {
+            if (t.getArtworkMap().containsKey(marker)) {
+                im.setImageBitmap(Objects.requireNonNull(t.getArtworkMap().get(marker)).getBitmap());
+            }
+        }
         return view;
     }
 }

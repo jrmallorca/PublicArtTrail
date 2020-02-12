@@ -1,6 +1,11 @@
 package com.publicarttrail.googlemapspractice.pojo;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+
 import com.google.android.gms.maps.model.LatLng;
+
+import java.util.Base64;
 
 // POJO converted from JSON
 public class Artwork {
@@ -11,12 +16,11 @@ public class Artwork {
     private String description;
     private double latitude;
     private double longitude;
-    // private Image image; // TODO: Add later
+    private String image;
 
     // More complex attributes for methods
-    // TODO: 10/02/2020 Replace this with Image from Artwork when implemented
-    private int drawableId;
     private LatLng latLng;
+    private Bitmap bitmap;
 
     public long getId() {
         return id;
@@ -34,16 +38,16 @@ public class Artwork {
         return description;
     }
 
-    public int getDrawableId() {
-        return drawableId;
-    }
-
-    public void setDrawableId(int drawableId) {
-        this.drawableId = drawableId;
-    }
-
     public LatLng getLatLng() {
         if (latLng == null) latLng = new LatLng(latitude, longitude);
         return latLng;
+    }
+
+    public Bitmap getBitmap() {
+        if (bitmap == null) {
+            byte[] imgBytes = Base64.getDecoder().decode(image);
+            bitmap = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+        }
+        return bitmap;
     }
 }

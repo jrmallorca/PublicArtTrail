@@ -1,4 +1,4 @@
-package com.publicarttrail.googlemapspractice;
+package com.publicarttrail.googlemapspractice.networking;
 
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 
