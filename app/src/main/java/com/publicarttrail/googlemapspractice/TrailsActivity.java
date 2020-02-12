@@ -1,6 +1,10 @@
 package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
@@ -8,6 +12,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -35,6 +40,7 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
+import com.publicarttrail.googlemapspractice.directionhelpers.LocationService;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
 import com.publicarttrail.googlemapspractice.networking.RetrofitService;
 import com.publicarttrail.googlemapspractice.networking.TrailsClient;
@@ -60,7 +66,6 @@ public class TrailsActivity extends AppCompatActivity
 
     // Location attributes
     Location mlocation;
-    FusedLocationProviderClient fusedLocationProviderClient;
     private static final int Request_Code = 101;
     private Button currentLocationButton;
     private Marker currentLocationMarker;
@@ -68,6 +73,7 @@ public class TrailsActivity extends AppCompatActivity
     private Polyline trailPolyline;
     private Polyline locationPolyline;
     private Boolean askingForDirection = false;
+    private Intent intent;
 
     // Selecting trails attributes
     // TODO: 11/02/2020 Consider making static in RetrofitService so as to only do GET once
@@ -143,7 +149,6 @@ public class TrailsActivity extends AppCompatActivity
         }
 
         // Setting up location
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         isCurrentLocSet = false;
 
         // Create the buttons
@@ -231,19 +236,13 @@ public class TrailsActivity extends AppCompatActivity
         }
 
         if (!isCurrentLocSet) {
-            GetLastLocation();
-        } else if (isCurrentLocSet) {
-            if (currentLocationMarker.isVisible()) {
-                currentLocationMarker.setVisible(false);
-                locationPolyline.setVisible(false);
-                trailSelected.zoomIn();
-            } else {
-                currentLocationMarker.setVisible(true);
-                // TODO: May need fixing so that it more accurately tells the user of the location
-                trailSelected.zoomFit(currentLocationMarker);
-                askingForDirection = true;
-                trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-            }
+            startService();
+        } else{
+            isCurrentLocSet = false;
+            stopService();
+            currentLocationMarker = null;
+            locationPolyline.setVisible(false);
+            trailSelected.zoomIn();
         }
     }
 
@@ -282,7 +281,7 @@ public class TrailsActivity extends AppCompatActivity
     //if the user denied in the beginning, the permission will appear again and continue to show current location if accepted the second time
     //map is not created anymore here, as this process is done only when the user clicks on the show-location button. Map is now created in oncreate()
     //if user accepted in either times, show the current loc marker and zoom appropriately, and set iscurrentLocSet to be true because current loc marker is created.
-    private void GetLastLocation() {
+    /*private void GetLastLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]
@@ -299,17 +298,34 @@ public class TrailsActivity extends AppCompatActivity
 
             }
         });
+    }*/
+
+    void startService(){
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]
+                    {Manifest.permission.ACCESS_FINE_LOCATION}, Request_Code);
+            return;
+        }
+        LocationBroadcastReceiver receiver = new LocationBroadcastReceiver();
+        IntentFilter filter = new IntentFilter("ACT_LOC");
+        registerReceiver(receiver, filter);
+        intent = new Intent(TrailsActivity.this, LocationService.class);
+        startService(intent);
+
     }
 
-    private void setCurrentLocationMarker() {
-        LatLng latLng = new LatLng(mlocation.getLatitude(), mlocation.getLongitude());
+    void stopService(){
+        stopService(intent);
+    }
+
+    private void setCurrentLocationMarker(LatLng latLng) {
+        isCurrentLocSet = true;
         MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("You are here!")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         currentLocationMarker = mMap.addMarker(markerOptions);
         currentLocationMarker.setVisible(true);
         askingForDirection = true;
-        trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-
     }
 
     // Result on whether user accepted permission or not
@@ -318,7 +334,7 @@ public class TrailsActivity extends AppCompatActivity
         switch (requestCode) {
             case Request_Code:
                 if (grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    GetLastLocation();
+                startService();
                 }
                 break;
         }
@@ -351,6 +367,30 @@ public class TrailsActivity extends AppCompatActivity
 
         }
 
+    }
+
+//inner class
+    public class LocationBroadcastReceiver extends BroadcastReceiver{
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("ACT_LOC")){
+
+                double latitude = intent.getDoubleExtra("latitude", 0f);
+                double longitude = intent.getDoubleExtra("longitude", 0f);
+                LatLng latLng = new LatLng(latitude, longitude);
+
+                if(currentLocationMarker!=null){
+                    currentLocationMarker.remove();
+                    setCurrentLocationMarker(latLng);
+                }
+                else{
+                    setCurrentLocationMarker(latLng);
+                    trailSelected.zoomFit(currentLocationMarker);
+                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                }
+            }
+        }
     }
 
 
