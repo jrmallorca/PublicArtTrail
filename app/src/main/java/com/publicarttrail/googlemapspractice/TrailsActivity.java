@@ -43,7 +43,6 @@ import com.publicarttrail.googlemapspractice.pojo.Trail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +52,6 @@ import retrofit2.Response;
 
 public class TrailsActivity extends AppCompatActivity
         implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener, TaskLoadedCallback {
-
     private GoogleMap mMap;
 
     // Navigation menu attributes
@@ -76,13 +74,12 @@ public class TrailsActivity extends AppCompatActivity
     private List<Trail> trails = new ArrayList<>();
     // TODO: 09/02/2020 Possibility to replace this with id from Trail???
     private Trail trailSelected;
-    //map that contains the marker and corresponding image drawable int
-    private Map<Marker,Integer> markerAndImage = new HashMap<>();
 
     TrailsClient trailsClient = RetrofitService
             .getRetrofit()
             .create(TrailsClient.class);
 
+    // TODO: 12/02/2020 Consider putting this in MainActivity or RetrofitService
     private Callback<List<Trail>> trailsCallback = new Callback<List<Trail>>() {
         @Override
         public void onResponse(Call<List<Trail>> call, Response<List<Trail>> response) {
@@ -91,7 +88,7 @@ public class TrailsActivity extends AppCompatActivity
             // Setting up menu of drawer
             Menu menu = navigationView.getMenu();
             for (Trail t : trails) {
-                menu.add(R.id.nav_trailsGroup, (int) t.getId(), Menu.NONE, t.getName());
+                menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
             }
 
             // Setting up the map
@@ -163,17 +160,13 @@ public class TrailsActivity extends AppCompatActivity
         for (Trail t : trails) {
             t.setMap(mMap);
 
-            // TODO: 11/02/2020 Fix this (setting artwork's drawable id but might just use image soon in BaseTrails)
             for (Artwork a : t.getArtworks()) {
-                a.setDrawableId(R.drawable.error_image);
                 t.addMarker(a, TrailsActivity.this);
             }
         }
 
-        addToMarkerAndImage();
-
         //custom infowindow set up (check newly created class)
-        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerAndImage);
+        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, trails);
 
         //infowindows in this map will use format set in CustomInfoWindowAdapter
         mMap.setInfoWindowAdapter(adapter);
@@ -232,7 +225,7 @@ public class TrailsActivity extends AppCompatActivity
     // zoom in features.
     private void showDisableCurrentLocation() {
         //hide any open infowindows
-        for (Map.Entry element : markerAndImage.entrySet()) {
+        for (Map.Entry element : trailSelected.getArtworkMap().entrySet()) {
             Marker key = (Marker) element.getKey();
             key.hideInfoWindow();
         }
@@ -255,13 +248,6 @@ public class TrailsActivity extends AppCompatActivity
     }
 
     // -- FUNCTIONALITIES --
-
-    // Update markerimagehashmap
-    public void addToMarkerAndImage(){
-        for(Trail trail:trails){
-            trail.addToMarkerImageHashmap(markerAndImage);
-        }
-    }
 
     // Create location button
     public void createButtons() {

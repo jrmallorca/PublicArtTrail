@@ -108,17 +108,6 @@ public class Trail {
         }
     }
 
-    // TODO: 10/02/2020 Replace with image from Trail when implemented
-    // Adds marker and drawableid to the given hashmap
-    public void addToMarkerImageHashmap(Map<Marker,Integer> markerAndImage) {
-        for (Map.Entry element : artworkMap.entrySet()) {
-            Marker marker = (Marker) element.getKey();
-            Artwork artwork = (Artwork) element.getValue();
-
-            markerAndImage.put(marker, artwork.getDrawableId());
-        }
-    }
-
     // --- Zoom methods ---
 
     public void zoomIn() {

@@ -5,7 +5,7 @@
 
     <!-- Options for trails -->
     <group
-        android:id="@+id/nav_trailsGroup"
+        android:id="@+id/nav_trails_group"
         android:checkableBehavior="single"/>
 
 </menu>
