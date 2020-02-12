@@ -276,30 +276,7 @@ public class TrailsActivity extends AppCompatActivity
         else return true;
     }
 
-    // -- LOCATION FUNCTIONALITIES --
-
-    //if the user denied in the beginning, the permission will appear again and continue to show current location if accepted the second time
-    //map is not created anymore here, as this process is done only when the user clicks on the show-location button. Map is now created in oncreate()
-    //if user accepted in either times, show the current loc marker and zoom appropriately, and set iscurrentLocSet to be true because current loc marker is created.
-    /*private void GetLastLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]
-                    {Manifest.permission.ACCESS_FINE_LOCATION}, Request_Code);
-            return;
-        }
-        Task<Location> task = fusedLocationProviderClient.getLastLocation();
-        task.addOnSuccessListener(location -> {
-            if (location != null){
-                mlocation = location;
-                isCurrentLocSet = true;
-                setCurrentLocationMarker();
-                trailSelected.zoomFit(currentLocationMarker);
-
-            }
-        });
-    }*/
-
+//start tracking
     void startService(){
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -314,7 +291,7 @@ public class TrailsActivity extends AppCompatActivity
         startService(intent);
 
     }
-
+//stop tracking
     void stopService(){
         stopService(intent);
     }
@@ -369,7 +346,7 @@ public class TrailsActivity extends AppCompatActivity
 
     }
 
-//inner class
+//inner class (describes what to do when tracking starts)
     public class LocationBroadcastReceiver extends BroadcastReceiver{
 
         @Override

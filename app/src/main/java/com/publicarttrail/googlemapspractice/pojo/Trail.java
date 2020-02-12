@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.ToDoubleBiFunction;
 
 // POJO converted from JSON
 public class Trail {
@@ -109,7 +110,7 @@ public class Trail {
     }
 
     // --- Zoom methods ---
-
+    // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
     public void zoomIn() {
         //map.moveCamera(CameraUpdateFactory.newLatLngZoom(zoomInArea, zoomFactor));
         int padding = 70; // Offset from edges of the map in pixels
