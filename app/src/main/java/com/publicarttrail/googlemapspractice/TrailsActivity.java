@@ -1,7 +1,10 @@
 package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -24,6 +27,7 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -47,6 +51,8 @@ import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
 
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -61,7 +67,7 @@ public class TrailsActivity extends AppCompatActivity
     private DrawerLayout drawer;
 
     Location mlocation;
-    FusedLocationProviderClient fusedLocationProviderClient;
+   // FusedLocationProviderClient fusedLocationProviderClient;
     private static final int Request_Code = 101;
     private Button currentLocationButton;
     private Marker currentLocationMarker;
@@ -69,6 +75,7 @@ public class TrailsActivity extends AppCompatActivity
     private Polyline trailPolyline;
     private Polyline locationPolyline;
     private Boolean askingForDirection = false;
+    private Intent intent;
 
 
     private List<Trail> trails;
@@ -111,7 +118,7 @@ public class TrailsActivity extends AppCompatActivity
         }
 
         // Setting up location
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+       // fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         isCurrentLocSet = false;
 
         // Setting up the map
@@ -166,6 +173,7 @@ public class TrailsActivity extends AppCompatActivity
                     if (isCurrentLocSet){
                         currentLocationMarker.setVisible(false);
                         locationPolyline.setVisible(false);
+
                     }
                     if (trailPolyline!=null) trailPolyline.setVisible(false);
                     trailSelected = trails.get(0);
@@ -222,25 +230,33 @@ public class TrailsActivity extends AppCompatActivity
             key.hideInfoWindow();
         }
         if (!isCurrentLocSet) {
-            GetLastLocation();
+            Toast.makeText(TrailsActivity.this, "jhjjhghjjgjhggjhhhhhhhh", Toast.LENGTH_SHORT).show();
+            startService();
 
-        } else if (isCurrentLocSet) {
-            if (currentLocationMarker.isVisible()) {
-                currentLocationMarker.setVisible(false);
+        } else {
+           // if (currentLocationMarker.isVisible()) {
+            isCurrentLocSet = false;
+            stopService();
+            Toast.makeText(TrailsActivity.this, "STOP2", Toast.LENGTH_SHORT).show();
+            //currentLocationMarker.setVisible(false);
+            currentLocationMarker=null;
                 locationPolyline.setVisible(false);
-                trailSelected.zoomIn(TrailsActivity.this);
+           // stopService(new Intent(TrailsActivity.this, LocationRequest.class));
+
+            trailSelected.zoomIn(TrailsActivity.this);
 
 
-            } else {
-                currentLocationMarker.setVisible(true);
+            } /*else {
+                //currentLocationMarker.setVisible(true);
+                startService();
                 // TODO: May need fixing so that it more accurately tells the user of the location
-                trailSelected.zoomFit(currentLocationMarker);
-                askingForDirection = true;
-                trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+               // trailSelected.zoomFit(currentLocationMarker);
+               // askingForDirection = true;
+                //trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
 
-            }
+            }*/
         }
-    }
+
 
     // -- FUNCTIONALITIES --
 
@@ -347,7 +363,7 @@ public class TrailsActivity extends AppCompatActivity
     //if the user denied in the beginning, the permission will appear again and continue to show current location if accepted the second time
     //map is not created anymore here, as this process is done only when the user clicks on the show-location button. Map is now created in oncreate()
     //if user accepted in either times, show the current loc marker and zoom appropriately, and set iscurrentLocSet to be true because current loc marker is created.
-    private void GetLastLocation() {
+  /*  private void GetLastLocation() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]
@@ -367,16 +383,34 @@ public class TrailsActivity extends AppCompatActivity
                 }
             }
         });
+    }*/
+    void startService(){
+        LocationBroadcastReceiver receiver = new LocationBroadcastReceiver();
+        IntentFilter filter = new IntentFilter("ACT_LOC");
+        registerReceiver(receiver, filter);
+        intent = new Intent(TrailsActivity.this, LocationService.class);
+        startService(intent);
+
+
     }
 
-    private void setCurrentLocationMarker() {
-        LatLng latLng = new LatLng(mlocation.getLatitude(), mlocation.getLongitude());
+    void stopService(){
+        //Intent intent = new Intent(TrailsActivity.this, LocationService.class);
+        stopService(intent);
+        Toast.makeText(TrailsActivity.this, "stop "+ isCurrentLocSet, Toast.LENGTH_SHORT).show();
+
+    }
+
+    private void setCurrentLocationMarker(LatLng latLng) {
+        //LatLng latLng = new LatLng(mlocation.getLatitude(), mlocation.getLongitude());
+        isCurrentLocSet = true;
+        Toast.makeText(TrailsActivity.this, "STOP" + isCurrentLocSet, Toast.LENGTH_SHORT).show();
+
         MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("You are here!")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         currentLocationMarker = mMap.addMarker(markerOptions);
         currentLocationMarker.setVisible(true);
         askingForDirection = true;
-        trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
 
     }
 
@@ -386,7 +420,7 @@ public class TrailsActivity extends AppCompatActivity
         switch (requestCode) {
             case Request_Code:
                 if (grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    GetLastLocation();
+                    startService();
                 }
                 break;
         }
@@ -420,6 +454,37 @@ public class TrailsActivity extends AppCompatActivity
         }
 
     }
+
+    public class LocationBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(intent.getAction().equals("ACT_LOC")){
+
+                double lat = intent.getDoubleExtra("latitude", 0f);
+                double lon = intent.getDoubleExtra("longitude", 0f);
+                LatLng latLng = new LatLng(lat, lon);
+
+
+                if (currentLocationMarker != null) {
+                    currentLocationMarker.remove();
+                    setCurrentLocationMarker(latLng);
+                }
+                else{
+                    setCurrentLocationMarker(latLng);
+                    trailSelected.zoomFit(currentLocationMarker);
+                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+
+
+                }
+
+
+            }
+        }
+
+
+    }
+
 
 
 
