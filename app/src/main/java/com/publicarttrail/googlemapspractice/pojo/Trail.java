@@ -30,8 +30,6 @@ public class Trail {
     // Base attributes
     private long id;
     private String name;
-    private double latitude;
-    private double longitude;
     private List<Artwork> artworks;
 
     // More complex attributes for methods
@@ -39,7 +37,6 @@ public class Trail {
     private Map<Marker, Artwork> artworkMap = new HashMap<>();
     private List<Marker> markers = new ArrayList<>();
     private GoogleMap map;
-    // TODO: 11/02/2020 Ask what this is about and if this means we can remove latitude and longitude
     private LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
     public long getId() {
@@ -110,6 +107,7 @@ public class Trail {
     }
 
     // --- Zoom methods ---
+    
     // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
     public void zoomIn() {
         //map.moveCamera(CameraUpdateFactory.newLatLngZoom(zoomInArea, zoomFactor));
@@ -137,6 +135,7 @@ public class Trail {
         map.animateCamera(cu);
     }
 
+    // TODO: 13/02/2020 Should we remove if unused? 
     @Deprecated
     // Another zoom in function (not used)
     public void zoom() {
