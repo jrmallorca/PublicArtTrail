@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -22,6 +23,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -36,6 +39,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.LocationService;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
@@ -62,6 +66,8 @@ public class TrailsActivity extends AppCompatActivity
     private DrawerLayout drawer;
     private NavigationView navigationView;
 
+    // Location attributes
+    Location mlocation;
     private static final int Request_Code = 101;
     private Button currentLocationButton;
     private Marker currentLocationMarker;
@@ -158,7 +164,7 @@ public class TrailsActivity extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Set map for all trails and markers for each artwork
+        // Set map for all trails
         for (Trail t : trails) {
             t.setMap(mMap);
 
@@ -173,6 +179,9 @@ public class TrailsActivity extends AppCompatActivity
         //infowindows in this map will use format set in CustomInfoWindowAdapter
         mMap.setInfoWindowAdapter(adapter);
 
+        //set infowindow clicklistener
+        infoWindowListener();
+
         // Show the first trail's markers, set it as actionBar's title and zoom in
         trailSelected = trails.get(0);
         setTitle(trailSelected.getName());
@@ -180,25 +189,13 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected.zoomIn();
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this);
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(Marker marker) {
 
-                //ByteArrayOutputStream bs = new ByteArrayOutputStream();
-                //trailSelected.getArtworkMap().get(marker).getBitmap().compress(Bitmap.CompressFormat.PNG, 50, bs);
-
-                Intent info = new Intent(TrailsActivity.this, InfoPage.class);
-                info.putExtra("name", trailSelected.getArtworkMap().get(marker).getName());
-                info.putExtra("artist", trailSelected.getArtworkMap().get(marker).getCreator());
-                info.putExtra("description", trailSelected.getArtworkMap().get(marker).getDescription());
-                //info.putExtra("image", bs.toByteArray());
-                startActivity(info);
-            }
-        });
     }
 
     // -- BUTTONS --
 
+    // TODO: Make this better
+    // TODO: 09/02/2020 Jonquil needs to understand what code beyond hiding markers do
     // Depending on the menuItem, do an action then close drawer
     // If we return false, no item will be selected even if the action was triggered
     @Override
@@ -255,6 +252,26 @@ public class TrailsActivity extends AppCompatActivity
             trailSelected.zoomIn();
         }
     }
+    //infowindow click listener
+    private void infoWindowListener(){
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+
+                Artwork artwork = trailSelected.getArtworkMap().get(marker);
+                ByteArrayOutputStream bs = new ByteArrayOutputStream();
+                artwork.getBitmap().compress(Bitmap.CompressFormat.JPEG, 10, bs);
+
+                Intent info = new Intent(TrailsActivity.this, InfoPage.class);
+                info.putExtra("name", artwork.getName());
+                info.putExtra("artist", artwork.getCreator());
+                info.putExtra("description", artwork.getDescription());
+                info.putExtra("image", bs.toByteArray());
+                info.putExtra("trail", trailSelected.getName());
+                startActivity(info);
+            }
+        });
+    }
 
     // -- FUNCTIONALITIES --
 
@@ -264,11 +281,13 @@ public class TrailsActivity extends AppCompatActivity
         currentLocationButton.setOnClickListener(v -> showDisableCurrentLocation());
     }
 
+
     @Override
     public boolean onMarkerClick(Marker marker) {
-        if (trailSelected.getArtworkMap().containsKey(marker)) {
+
+        if(trailSelected.getArtworkMap().containsKey(marker)){
             //moves map to show infowindow (don't know how it works->copy-paste)
-            int zoom = (int) mMap.getCameraPosition().zoom;
+            int zoom = (int)mMap.getCameraPosition().zoom;
             CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new
                     LatLng(marker.getPosition().latitude + (double)90/Math.pow(2, zoom),
                     marker.getPosition().longitude), zoom);
@@ -276,13 +295,15 @@ public class TrailsActivity extends AppCompatActivity
             marker.showInfoWindow();
 
             return true;
-        } else if (marker.equals(currentLocationMarker) ){
-            //do nothing, don't show infowindow as there will be problems
+        }
+        else if(marker.equals(currentLocationMarker)){
+            //do nothing , dont show infowindow as there will be problems
             return true;
-        } else return true;
+        }
+        else return true;
     }
 
-    //start tracking
+//start tracking
     void startService(){
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -295,9 +316,9 @@ public class TrailsActivity extends AppCompatActivity
         registerReceiver(receiver, filter);
         intent = new Intent(TrailsActivity.this, LocationService.class);
         startService(intent);
-    }
 
-    //stop tracking
+    }
+//stop tracking
     void stopService(){
         stopService(intent);
     }
@@ -323,39 +344,51 @@ public class TrailsActivity extends AppCompatActivity
         }
     }
 
+
+
     //when url comes
     @Override
     public void onTaskDone(Object... values) {
+
+
         PolylineOptions polylineOptions = (PolylineOptions) values[0];
         List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(20));
 
-        if (askingForDirection) { //if polyline is for direction from current location to the trail
+        //if polyline is for direction from current location to the trail
+        if (askingForDirection) {
+
             locationPolyline = mMap.addPolyline(polylineOptions);
             locationPolyline.setColor(Color.RED);
             locationPolyline.setPattern(pattern);
             askingForDirection = false;
-        } else { //if polyline is for trail
+        }
+        //if polyline is for trail
+        else {
+
             trailPolyline = mMap.addPolyline(polylineOptions);
             trailPolyline.setColor(Color.BLUE);
             trailPolyline.setPattern(pattern);
+
         }
+
     }
 
-    //inner class (describes what to do when tracking starts)
+//inner class (describes what to do when tracking starts)
     public class LocationBroadcastReceiver extends BroadcastReceiver{
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals("ACT_LOC")) {
+            if(intent.getAction().equals("ACT_LOC")){
 
                 double latitude = intent.getDoubleExtra("latitude", 0f);
                 double longitude = intent.getDoubleExtra("longitude", 0f);
                 LatLng latLng = new LatLng(latitude, longitude);
 
-                if (currentLocationMarker != null) {
+                if(currentLocationMarker!=null){
                     currentLocationMarker.remove();
                     setCurrentLocationMarker(latLng);
-                } else {
+                }
+                else{
                     setCurrentLocationMarker(latLng);
                     trailSelected.zoomFit(currentLocationMarker);
                     trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
