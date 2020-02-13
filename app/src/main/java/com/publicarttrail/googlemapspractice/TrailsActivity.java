@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
@@ -47,6 +48,7 @@ import com.publicarttrail.googlemapspractice.networking.TrailsClient;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -153,6 +155,7 @@ public class TrailsActivity extends AppCompatActivity
 
         // Create the buttons
         createButtons();
+
     }
 
     // When the map is ready, add markers for all trails, sets current location, and creates a listener
@@ -183,6 +186,21 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected.zoomIn();
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this);
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+
+                //ByteArrayOutputStream bs = new ByteArrayOutputStream();
+                //trailSelected.getArtworkMap().get(marker).getBitmap().compress(Bitmap.CompressFormat.PNG, 50, bs);
+
+                Intent info = new Intent(TrailsActivity.this, InfoPage.class);
+                info.putExtra("name", trailSelected.getArtworkMap().get(marker).getName());
+                info.putExtra("artist", trailSelected.getArtworkMap().get(marker).getCreator());
+                info.putExtra("description", trailSelected.getArtworkMap().get(marker).getDescription());
+                //info.putExtra("image", bs.toByteArray());
+                startActivity(info);
+            }
+        });
     }
 
     // -- BUTTONS --
