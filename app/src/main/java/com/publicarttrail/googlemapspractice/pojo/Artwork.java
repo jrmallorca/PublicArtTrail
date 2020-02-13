@@ -5,10 +5,11 @@ import android.graphics.BitmapFactory;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.io.Serializable;
 import java.util.Base64;
 
 // POJO converted from JSON
-public class Artwork {
+public class Artwork implements Serializable {
     // Base attributes
     private long id;
     private String name;
@@ -19,8 +20,8 @@ public class Artwork {
     private String image;
 
     // More complex attributes for methods
-    private LatLng latLng;
-    private Bitmap bitmap;
+    private transient LatLng latLng;
+    private transient Bitmap bitmap;
 
     public long getId() {
         return id;
