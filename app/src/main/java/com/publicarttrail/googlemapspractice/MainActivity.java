@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
         }, 1000);
 
 
-        logo = (ImageView) findViewById(R.id.logo);
+        logo = findViewById(R.id.logo);
 
         logo.setImageResource(R.drawable.web_hi_res_512);
     }

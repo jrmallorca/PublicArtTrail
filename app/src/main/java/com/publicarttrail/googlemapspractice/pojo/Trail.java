@@ -119,7 +119,6 @@ public class Trail {
 
     // Zoom to fit in all markers including current position (calculatemiddlepoint is renamed)
     public void zoomFit(Marker currentPosition) {
-        // TODO: 10/02/2020 Jonquil needs to find out why there is another builder used instead of attribute
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
         for (Map.Entry element : artworkMap.entrySet()) {

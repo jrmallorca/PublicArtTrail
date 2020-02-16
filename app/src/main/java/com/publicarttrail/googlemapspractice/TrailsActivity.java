@@ -112,11 +112,6 @@ public class TrailsActivity extends AppCompatActivity
         }
     };
 
-// a new attribute was created - isCurrentLocSet - which basically states whether or not current
-// location marker is created. It makes it easier for showDisableCurrentLoc function logic.  It is
-// initially set to false in onCreate, and is set to true when user selects the button to show
-// current location and has agreed to enable access to permission. This is done in getLastLocation()
-
     // Starts off the map Activity and relevant location stuff, also creates the buttons and textview
     // needed which are initially set to be invisible
     @Override
@@ -194,8 +189,6 @@ public class TrailsActivity extends AppCompatActivity
 
     // -- BUTTONS --
 
-    // TODO: Make this better
-    // TODO: 09/02/2020 Jonquil needs to understand what code beyond hiding markers do
     // Depending on the menuItem, do an action then close drawer
     // If we return false, no item will be selected even if the action was triggered
     @Override
@@ -220,6 +213,7 @@ public class TrailsActivity extends AppCompatActivity
         return true;
     }
 
+    // TODO: 16/02/2020 Add more functions (Go back from pressing info window for example)
     @Override
     public void onBackPressed() {
         // Goes back when the drawer is open, else closes app
@@ -252,24 +246,21 @@ public class TrailsActivity extends AppCompatActivity
             trailSelected.zoomIn();
         }
     }
+
     //infowindow click listener
     private void infoWindowListener(){
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(Marker marker) {
+        mMap.setOnInfoWindowClickListener(marker -> {
+            Artwork artwork = trailSelected.getArtworkMap().get(marker);
+            ByteArrayOutputStream bs = new ByteArrayOutputStream();
+            artwork.getBitmap().compress(Bitmap.CompressFormat.PNG, 10, bs);
 
-                Artwork artwork = trailSelected.getArtworkMap().get(marker);
-                ByteArrayOutputStream bs = new ByteArrayOutputStream();
-                artwork.getBitmap().compress(Bitmap.CompressFormat.JPEG, 10, bs);
-
-                Intent info = new Intent(TrailsActivity.this, InfoPage.class);
-                info.putExtra("name", artwork.getName());
-                info.putExtra("artist", artwork.getCreator());
-                info.putExtra("description", artwork.getDescription());
-                info.putExtra("image", bs.toByteArray());
-                info.putExtra("trail", trailSelected.getName());
-                startActivity(info);
-            }
+            Intent info = new Intent(TrailsActivity.this, InfoPage.class);
+            info.putExtra("name", artwork.getName());
+            info.putExtra("artist", artwork.getCreator());
+            info.putExtra("description", artwork.getDescription());
+            info.putExtra("image", bs.toByteArray());
+            info.putExtra("trail", trailSelected.getName());
+            startActivity(info);
         });
     }
 

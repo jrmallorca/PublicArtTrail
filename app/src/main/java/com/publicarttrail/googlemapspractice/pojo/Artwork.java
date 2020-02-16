@@ -43,9 +43,6 @@ public class Artwork implements Serializable {
         if (latLng == null) latLng = new LatLng(latitude, longitude);
         return latLng;
     }
-    public String getImage(){
-        return image;
-    }
 
     public Bitmap getBitmap() {
         if (bitmap == null) {
