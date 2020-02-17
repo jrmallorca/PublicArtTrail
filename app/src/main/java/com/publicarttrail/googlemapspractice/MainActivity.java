@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         logo = findViewById(R.id.logo);
 
-        logo.setImageResource(R.drawable.web_hi_res_512);
+        logo.setImageResource(R.drawable.welcome);
     }
 
 }
