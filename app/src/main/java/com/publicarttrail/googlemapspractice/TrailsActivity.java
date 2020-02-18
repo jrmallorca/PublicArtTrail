@@ -240,7 +240,7 @@ public class TrailsActivity extends AppCompatActivity
         mMap.setOnInfoWindowClickListener(marker -> {
             Artwork artwork = trailSelected.getArtworkMap().get(marker);
             ByteArrayOutputStream bs = new ByteArrayOutputStream();
-            artwork.getBitmap().compress(Bitmap.CompressFormat.PNG, 10, bs);
+            artwork.getBitmap().compress(Bitmap.CompressFormat.JPEG, 10, bs);
 
             Intent info = new Intent(TrailsActivity.this, InfoPage.class);
             info.putExtra("name", artwork.getName());
