@@ -1,6 +1,5 @@
 package com.publicarttrail.googlemapspractice;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -34,9 +33,8 @@ public class InfoPage extends AppCompatActivity {
         picture = findViewById(R.id.picture);
         toolbar = findViewById(R.id.toolbar);
 
-        // Setting up characteristics of toolbar
-        toolbar.setTitle(getIntent().getStringExtra("trail"));
-        toolbar.setTitleTextColor(Color.parseColor("#FFFFFFFF"));
+        // TODO: 18/02/2020 Need to make toolbar from TrailsActivity global 
+        // Setting up toolbar as action bar
         setSupportActionBar(toolbar);
     }
 
@@ -60,6 +58,8 @@ public class InfoPage extends AppCompatActivity {
         EventBus.getDefault().removeStickyEvent(event);
 
         Artwork artwork = event.artwork;
+
+        toolbar.setTitle(artwork.getName());
         nameText.setText(artwork.getName());
         artistText.setText(artwork.getCreator());
         descriptionText.setText(artwork.getDescription());

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">GoogleMapsPractice</string>
+    <string name="app_name">Public Art Trail</string>
     <string name="title_activity_maps">Map</string>
 
     <!-- Useful for screen readers (E.g. blind people who need to know what's happening on screen) -->
