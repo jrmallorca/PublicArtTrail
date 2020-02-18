@@ -13,7 +13,6 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -23,8 +22,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -39,24 +36,21 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.LocationService;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
-import com.publicarttrail.googlemapspractice.networking.RetrofitService;
-import com.publicarttrail.googlemapspractice.networking.TrailsClient;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class TrailsActivity extends AppCompatActivity
         implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener, TaskLoadedCallback {
@@ -83,35 +77,6 @@ public class TrailsActivity extends AppCompatActivity
     // TODO: 09/02/2020 Possibility to replace this with id from Trail???
     private Trail trailSelected;
 
-    TrailsClient trailsClient = RetrofitService
-            .getRetrofit()
-            .create(TrailsClient.class);
-
-    // TODO: 12/02/2020 Consider putting this in MainActivity or RetrofitService
-    private Callback<List<Trail>> trailsCallback = new Callback<List<Trail>>() {
-        @Override
-        public void onResponse(Call<List<Trail>> call, Response<List<Trail>> response) {
-            trails = response.body();
-
-            // Setting up menu of drawer
-            Menu menu = navigationView.getMenu();
-            for (Trail t : trails) {
-                menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
-            }
-
-            // Setting up the map
-            // Must be called here so that we can guarantee trails isn't null
-            SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
-                    .findFragmentById(R.id.map);
-            supportMapFragment.getMapAsync(TrailsActivity.this);
-        }
-
-        @Override
-        public void onFailure(Call<List<Trail>> call, Throwable t) {
-            t.printStackTrace();
-        }
-    };
-
     // Starts off the map Activity and relevant location stuff, also creates the buttons and textview
     // needed which are initially set to be invisible
     @Override
@@ -119,10 +84,22 @@ public class TrailsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trails);
 
-        // Give BaseTrails and BaseArtworks a list of their respective objects through GET request
-        trailsClient.getTrails()
-                .clone()
-                .enqueue(trailsCallback);
+        byte[] buf = new byte[0];
+        ByteArrayInputStream bis = new ByteArrayInputStream(buf);
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(bis);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try {
+            trails = (List<Trail>) ois.readObject();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         // Setting up the toolbar we created as the actionBar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -151,6 +128,11 @@ public class TrailsActivity extends AppCompatActivity
         // Create the buttons
         createButtons();
 
+        // Setting up the map
+        // Must be called here so that we can guarantee trails isn't null
+        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        supportMapFragment.getMapAsync(TrailsActivity.this);
     }
 
     // When the map is ready, add markers for all trails, sets current location, and creates a listener
@@ -166,6 +148,12 @@ public class TrailsActivity extends AppCompatActivity
             for (Artwork a : t.getArtworks()) {
                 t.addMarker(a, TrailsActivity.this);
             }
+        }
+
+        // Setting up menu of drawer
+        Menu menu = navigationView.getMenu();
+        for (Trail t : trails) {
+            menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
         }
 
         //custom infowindow set up (check newly created class)

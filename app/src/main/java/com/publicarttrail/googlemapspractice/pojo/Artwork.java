@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.Base64;
 
 // POJO converted from JSON
-public class Artwork implements Serializable {
+public class Artwork {
     // Base attributes
     private long id;
     private String name;
