@@ -6,11 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -38,6 +38,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.LocationService;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
+import com.publicarttrail.googlemapspractice.events.ArtworkEvent;
 import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
@@ -46,7 +47,6 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -92,6 +92,9 @@ public class TrailsActivity extends AppCompatActivity
         navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        // Attribute that knows dimensions of screen (Used so global map won't appear at beginning)
+        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> trailSelected.zoomIn());
+
         // Setting up the hamburger icon
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar,
                 R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -111,14 +114,14 @@ public class TrailsActivity extends AppCompatActivity
         createButtons();
     }
 
-    // Register this activity as a subscriber to the TrailAcquiredEvent
+    // Register this activity as a subscriber for events
     @Override
     public void onStart() {
         super.onStart();
         EventBus.getDefault().register(this);
     }
 
-    // Unregister this activity as a subscriber to the TrailAcquiredEvent
+    // Unregister this activity as a subscriber for events
     @Override
     public void onStop() {
         EventBus.getDefault().unregister(this);
@@ -130,9 +133,6 @@ public class TrailsActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
-        // Use the zoomIn method after the map layout is finished
-        mMap.setOnCameraIdleListener(() -> trailSelected.zoomIn());
 
         Menu menu = navigationView.getMenu();
         // Set map for all trails
@@ -247,17 +247,11 @@ public class TrailsActivity extends AppCompatActivity
     //infowindow click listener
     private void infoWindowListener() {
         mMap.setOnInfoWindowClickListener(marker -> {
-            Artwork artwork = trailSelected.getArtworkMap().get(marker);
-            ByteArrayOutputStream bs = new ByteArrayOutputStream();
-            // TODO: 18/02/2020 Improve quality of pictures
-            artwork.getBitmap().compress(Bitmap.CompressFormat.JPEG, 10, bs);
+            // Cache the artwork
+            EventBus.getDefault()
+                    .postSticky(new ArtworkEvent(trailSelected.getArtworkMap().get(marker)));
 
             Intent info = new Intent(TrailsActivity.this, InfoPage.class);
-            info.putExtra("name", artwork.getName());
-            info.putExtra("artist", artwork.getCreator());
-            info.putExtra("description", artwork.getDescription());
-            info.putExtra("image", bs.toByteArray());
-            info.putExtra("trail", trailSelected.getName());
             startActivity(info);
         });
     }
@@ -351,7 +345,7 @@ public class TrailsActivity extends AppCompatActivity
         }
     }
 
-//inner class (describes what to do when tracking starts)
+    //inner class (describes what to do when tracking starts)
     public class LocationBroadcastReceiver extends BroadcastReceiver{
 
         @Override
@@ -374,9 +368,4 @@ public class TrailsActivity extends AppCompatActivity
             }
         }
     }
-
-
-
-
 }
-
