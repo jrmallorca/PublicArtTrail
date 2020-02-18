@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.location.Location;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -39,14 +38,15 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.LocationService;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
+import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 
-import java.io.ByteArrayInputStream;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -60,8 +60,6 @@ public class TrailsActivity extends AppCompatActivity
     private DrawerLayout drawer;
     private NavigationView navigationView;
 
-    // Location attributes
-    Location mlocation;
     private static final int Request_Code = 101;
     private Button currentLocationButton;
     private Marker currentLocationMarker;
@@ -72,10 +70,11 @@ public class TrailsActivity extends AppCompatActivity
     private Intent intent;
 
     // Selecting trails attributes
-    // TODO: 11/02/2020 Consider making static in RetrofitService so as to only do GET once
     private List<Trail> trails = new ArrayList<>();
     // TODO: 09/02/2020 Possibility to replace this with id from Trail???
     private Trail trailSelected;
+
+    // -- ACTIVITY RELATED METHODS --
 
     // Starts off the map Activity and relevant location stuff, also creates the buttons and textview
     // needed which are initially set to be invisible
@@ -83,23 +82,6 @@ public class TrailsActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_trails);
-
-        byte[] buf = new byte[0];
-        ByteArrayInputStream bis = new ByteArrayInputStream(buf);
-        ObjectInputStream ois = null;
-        try {
-            ois = new ObjectInputStream(bis);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        try {
-            trails = (List<Trail>) ois.readObject();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
 
         // Setting up the toolbar we created as the actionBar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -127,12 +109,20 @@ public class TrailsActivity extends AppCompatActivity
 
         // Create the buttons
         createButtons();
+    }
 
-        // Setting up the map
-        // Must be called here so that we can guarantee trails isn't null
-        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        supportMapFragment.getMapAsync(TrailsActivity.this);
+    // Register this activity as a subscriber to the TrailAcquiredEvent
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    // Unregister this activity as a subscriber to the TrailAcquiredEvent
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
     }
 
     // When the map is ready, add markers for all trails, sets current location, and creates a listener
@@ -141,19 +131,21 @@ public class TrailsActivity extends AppCompatActivity
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        // Use the zoomIn method after the map layout is finished
+        mMap.setOnCameraIdleListener(() -> trailSelected.zoomIn());
+
+        Menu menu = navigationView.getMenu();
         // Set map for all trails
         for (Trail t : trails) {
             t.setMap(mMap);
 
+            // Add menu item for each trail
+            menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
+
+            // Add marker for each artwork in each trail
             for (Artwork a : t.getArtworks()) {
                 t.addMarker(a, TrailsActivity.this);
             }
-        }
-
-        // Setting up menu of drawer
-        Menu menu = navigationView.getMenu();
-        for (Trail t : trails) {
-            menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
         }
 
         //custom infowindow set up (check newly created class)
@@ -169,10 +161,8 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected = trails.get(0);
         setTitle(trailSelected.getName());
         trailSelected.artworkMarkersVisibility(true);
-        trailSelected.zoomIn();
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this);
-
     }
 
     // -- BUTTONS --
@@ -235,11 +225,31 @@ public class TrailsActivity extends AppCompatActivity
         }
     }
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        if (trailSelected.getArtworkMap().containsKey(marker)) {
+            //moves map to show infowindow (don't know how it works->copy-paste)
+            int zoom = (int)mMap.getCameraPosition().zoom;
+            CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new
+                    LatLng(marker.getPosition().latitude + (double)90/Math.pow(2, zoom),
+                    marker.getPosition().longitude), zoom);
+            mMap.animateCamera(cu,480,null);
+            marker.showInfoWindow();
+
+            return true;
+        } else if (marker.equals(currentLocationMarker)) {
+            //do nothing , dont show infowindow as there will be problems
+            return true;
+        } else return true;
+    }
+
+    // TODO: 18/02/2020 Can we use EventBus to transfer these objects from here to InfoPage?
     //infowindow click listener
-    private void infoWindowListener(){
+    private void infoWindowListener() {
         mMap.setOnInfoWindowClickListener(marker -> {
             Artwork artwork = trailSelected.getArtworkMap().get(marker);
             ByteArrayOutputStream bs = new ByteArrayOutputStream();
+            // TODO: 18/02/2020 Improve quality of pictures
             artwork.getBitmap().compress(Bitmap.CompressFormat.JPEG, 10, bs);
 
             Intent info = new Intent(TrailsActivity.this, InfoPage.class);
@@ -260,29 +270,20 @@ public class TrailsActivity extends AppCompatActivity
         currentLocationButton.setOnClickListener(v -> showDisableCurrentLocation());
     }
 
+    // Called when a TrailAcquiredEvent has been posted
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    public void onEvent(TrailAcquiredEvent event) {
+        EventBus.getDefault().removeStickyEvent(event);
+        trails = event.trails;
 
-    @Override
-    public boolean onMarkerClick(Marker marker) {
-
-        if(trailSelected.getArtworkMap().containsKey(marker)){
-            //moves map to show infowindow (don't know how it works->copy-paste)
-            int zoom = (int)mMap.getCameraPosition().zoom;
-            CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new
-                    LatLng(marker.getPosition().latitude + (double)90/Math.pow(2, zoom),
-                    marker.getPosition().longitude), zoom);
-            mMap.animateCamera(cu,480,null);
-            marker.showInfoWindow();
-
-            return true;
-        }
-        else if(marker.equals(currentLocationMarker)){
-            //do nothing , dont show infowindow as there will be problems
-            return true;
-        }
-        else return true;
+        // Setting up the map
+        // Must be called here so that we can guarantee trails isn't null
+        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        supportMapFragment.getMapAsync(TrailsActivity.this);
     }
 
-//start tracking
+    //start tracking
     void startService(){
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -297,7 +298,8 @@ public class TrailsActivity extends AppCompatActivity
         startService(intent);
 
     }
-//stop tracking
+
+    //stop tracking
     void stopService(){
         stopService(intent);
     }
@@ -323,8 +325,6 @@ public class TrailsActivity extends AppCompatActivity
         }
     }
 
-
-
     //when url comes
     @Override
     public void onTaskDone(Object... values) {
@@ -349,7 +349,6 @@ public class TrailsActivity extends AppCompatActivity
             trailPolyline.setPattern(pattern);
 
         }
-
     }
 
 //inner class (describes what to do when tracking starts)
