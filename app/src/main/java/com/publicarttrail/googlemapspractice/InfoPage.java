@@ -33,7 +33,7 @@ public class InfoPage extends AppCompatActivity {
         picture = findViewById(R.id.picture);
         toolbar = findViewById(R.id.toolbar);
 
-        // TODO: 18/02/2020 Need to make toolbar from TrailsActivity global 
+        // TODO: 18/02/2020 Might see if we can make toolbar global w/o copy/paste this
         // Setting up toolbar as action bar
         setSupportActionBar(toolbar);
     }
@@ -59,7 +59,7 @@ public class InfoPage extends AppCompatActivity {
 
         Artwork artwork = event.artwork;
 
-        toolbar.setTitle(artwork.getName());
+        setTitle(artwork.getName());
         nameText.setText(artwork.getName());
         artistText.setText(artwork.getCreator());
         descriptionText.setText(artwork.getDescription());

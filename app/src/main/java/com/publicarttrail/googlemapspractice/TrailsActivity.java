@@ -158,7 +158,6 @@ public class TrailsActivity extends AppCompatActivity
         infoWindowListener();
 
         // Show the first trail's markers, set it as actionBar's title and zoom in
-        trailSelected = trails.get(0);
         setTitle(trailSelected.getName());
         trailSelected.artworkMarkersVisibility(true);
         mMap.setOnMarkerClickListener(this);
@@ -269,6 +268,8 @@ public class TrailsActivity extends AppCompatActivity
     public void onEvent(TrailAcquiredEvent event) {
         EventBus.getDefault().removeStickyEvent(event);
         trails = event.trails;
+
+        trailSelected = trails.get(0);
 
         // Setting up the map
         // Must be called here so that we can guarantee trails isn't null
