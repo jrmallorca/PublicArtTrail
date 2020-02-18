@@ -1,7 +1,5 @@
 package com.publicarttrail.googlemapspractice;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageView;
@@ -10,41 +8,61 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.publicarttrail.googlemapspractice.events.ArtworkEvent;
+import com.publicarttrail.googlemapspractice.pojo.Artwork;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 public class InfoPage extends AppCompatActivity {
+    private TextView nameText;
+    private TextView artistText;
+    private TextView descriptionText;
+    private ImageView picture;
+    private Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_info_page);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        // Setting up various activity components
+        nameText = findViewById(R.id.name);
+        artistText = findViewById(R.id.artist);
+        descriptionText = findViewById(R.id.description);
+        picture = findViewById(R.id.picture);
+        toolbar = findViewById(R.id.toolbar);
+
+        // Setting up characteristics of toolbar
         toolbar.setTitle(getIntent().getStringExtra("trail"));
         toolbar.setTitleTextColor(Color.parseColor("#FFFFFFFF"));
         setSupportActionBar(toolbar);
-
-        getIntentsAndIntegrateWithLayout();
     }
 
-    private void getIntentsAndIntegrateWithLayout(){
-        String name = getIntent().getStringExtra("name");
-        TextView nameText = findViewById(R.id.name);
-        nameText.setText(name);
-
-        String artist = getIntent().getStringExtra("artist");
-        TextView artistText = findViewById(R.id.artist);
-        artistText.setText(artist);
-
-        String description = getIntent().getStringExtra("description");
-        TextView descriptionText = findViewById(R.id.description);
-        descriptionText.setText(description);
-
-        Bitmap bitmap = BitmapFactory.decodeByteArray(
-                getIntent().getByteArrayExtra("image"),0,getIntent()
-                        .getByteArrayExtra("image").length);
-        ImageView picture = findViewById(R.id.picture);
-        picture.setImageBitmap(bitmap);
+    // Register this activity as a subscriber for events
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
     }
 
+    // Unregister this activity as a subscriber for events
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
 
+    // Called when a TrailAcquiredEvent has been posted
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    public void onEvent(ArtworkEvent event) {
+        EventBus.getDefault().removeStickyEvent(event);
 
+        Artwork artwork = event.artwork;
+        nameText.setText(artwork.getName());
+        artistText.setText(artwork.getCreator());
+        descriptionText.setText(artwork.getDescription());
+        picture.setImageBitmap(artwork.getBitmap());
+    }
 }
