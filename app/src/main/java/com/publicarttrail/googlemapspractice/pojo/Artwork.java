@@ -19,6 +19,44 @@ public class Artwork {
     private double longitude;
     private String image;
 
+    public Artwork(long id, String name, String creator, String description, double longitude, double latitude, String image ){
+        this.id = id;
+        this.name = name;
+        this.creator = creator;
+        this.description = description;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.image = image;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
     // More complex attributes for methods
     private transient LatLng latLng;
     private transient Bitmap bitmap;
@@ -26,6 +64,7 @@ public class Artwork {
     public long getId() {
         return id;
     }
+
 
     public String getName() {
         return name;
