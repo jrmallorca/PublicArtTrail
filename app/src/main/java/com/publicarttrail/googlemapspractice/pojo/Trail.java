@@ -58,6 +58,7 @@ public class Trail {
         this.map = map;
     }
 
+
     // --- Marker methods ---
 
     public void addMarker(Artwork artwork, Context context) {
@@ -84,7 +85,7 @@ public class Trail {
 
     // TODO: 10/02/2020 Hmmm... Dunno how to improve but there might be a better way??? Either replace this or reconsider ordering in DB
     // Return marker depending on position of marker in the list
-    private int numberMarker(int i) {
+    public int numberMarker(int i) {
         if (i==1) return R.drawable.number_1;
         else if (i==2) return R.drawable.number_2;
         else if (i==3) return R.drawable.number_3;
@@ -155,7 +156,7 @@ public class Trail {
     // --- Visibility of trail methods ---
 
     // Creating URL for JSON request for trail
-    private String getUrl(LatLng origin, LatLng dest, String directionMode, List<LatLng> waypoints) {
+    public String getUrl(LatLng origin, LatLng dest, String directionMode, List<LatLng> waypoints) {
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
 
@@ -168,7 +169,7 @@ public class Trail {
         // Building the parameters to the web service
         StringBuilder str_waypoints = new StringBuilder("waypoints=");
 
-        for (int i = 0; i < waypoints.size() - 1; i++) {
+        for (int i = 0; i <= waypoints.size() - 1; i++) {
             if (i != waypoints.size() - 1) {
                 str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude).append("|");
             } else str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude);
@@ -184,7 +185,7 @@ public class Trail {
     }
 
     // Request for current location to trail
-    private String getUrl2(LatLng origin, LatLng dest, String directionMode) {
+    public String getUrl2(LatLng origin, LatLng dest, String directionMode) {
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
 
@@ -205,7 +206,7 @@ public class Trail {
     }
 
     // Create array for waypoints
-    private List<LatLng> getWaypoints(List<Marker> markers) {
+    public List<LatLng> getWaypoints(List<Marker> markers) {
         List<LatLng> wayPoints = new ArrayList<>();
         for (int i = 1; i < markers.size() - 1; i++) {
             wayPoints.add(markers.get(i).getPosition());
