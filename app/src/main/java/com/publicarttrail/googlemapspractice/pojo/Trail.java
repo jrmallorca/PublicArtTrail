@@ -139,6 +139,25 @@ public class Trail {
         map.animateCamera(cu);
     }
 
+    // TODO: 13/02/2020 Should we remove if unused? 
+    @Deprecated
+    // Another zoom in function (not used)
+    public void zoom() {
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+
+        for (Map.Entry element : artworkMap.entrySet()) {
+            Marker key = (Marker) element.getKey();
+            builder.include(key.getPosition());
+        }
+
+        //builder.include(currentPosition.getPosition());
+        LatLngBounds bounds = builder.build();
+        int padding = 100; // Offset from edges of the map in pixels
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+        map.moveCamera(cu);
+
+        //map.animateCamera(cu);
+    }
 
     // --- Visibility of trail methods ---
 

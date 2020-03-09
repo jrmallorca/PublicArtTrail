@@ -93,8 +93,7 @@ public class TrailsActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         // Attribute that knows dimensions of screen (Used so global map won't appear at beginning)
-       // drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> trailSelected.zoomIn());
-        trailSelected.zoomIn();
+        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> trailSelected.zoomIn());
 
         // Setting up the hamburger icon
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar,
@@ -133,7 +132,6 @@ public class TrailsActivity extends AppCompatActivity
     // for any marker selection
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
         mMap = googleMap;
 
         Menu menu = navigationView.getMenu();
@@ -268,21 +266,16 @@ public class TrailsActivity extends AppCompatActivity
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(TrailAcquiredEvent event) {
-        EspressoHandlingResource.increment();
-
         EventBus.getDefault().removeStickyEvent(event);
         trails = event.trails;
 
         trailSelected = trails.get(0);
-
 
         // Setting up the map
         // Must be called here so that we can guarantee trails isn't null
         SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         supportMapFragment.getMapAsync(TrailsActivity.this);
-        EspressoHandlingResource.decrement();
-
     }
 
     //start tracking

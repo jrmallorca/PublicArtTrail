@@ -5,25 +5,20 @@ import android.os.Bundle;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.test.espresso.idling.CountingIdlingResource;
 
 import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 import com.publicarttrail.googlemapspractice.networking.RetrofitService;
 import com.publicarttrail.googlemapspractice.networking.TrailsClient;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
-import com.publicarttrail.googlemapspractice.EspressoHandlingResource;
-
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
 
 // Start page
 public class MainActivity extends AppCompatActivity {
@@ -40,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         public void onResponse(Call<List<Trail>> call, Response<List<Trail>> response) {
             // Cache the trails
             EventBus.getDefault().postSticky(new TrailAcquiredEvent(response.body()));
-            EspressoHandlingResource.decrement();
+
             // Start TrailsActivity
             Intent info = new Intent(MainActivity.this, TrailsActivity.class);
             startActivity(info);
@@ -62,7 +57,6 @@ public class MainActivity extends AppCompatActivity {
         logo.setImageResource(R.drawable.welcome);
 
         // Call GET request
-        EspressoHandlingResource.increment();
         trailsClient.getTrails()
                 .clone()
                 .enqueue(trailsCallback);
