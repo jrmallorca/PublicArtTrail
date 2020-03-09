@@ -1,5 +1,6 @@
 package com.publicarttrail.googlemapspractice;
 
+<<<<<<< Updated upstream
 import android.app.MediaRouteButton;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
@@ -47,9 +48,51 @@ public class MainActivityTest {
         IdlingRegistry.getInstance().register(EspressoHandlingResource.getIdlingResource());
         intended(hasComponent(TrailsActivity.class.getName()));
 
+=======
+import androidx.test.core.app.ActivityScenario;
+import androidx.test.espresso.IdlingRegistry;
+import androidx.test.runner.AndroidJUnit4;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
+
+@RunWith(AndroidJUnit4.class)
+public class MainActivityTest {
+
+    @Before
+    public void setup(){
+
+        ActivityScenario.launch(MainActivity.class);
+    }
+
+    @Test
+    public void view(){
+        onView(withId(R.id.main)).check(matches(isDisplayed()));
+        onView(withId(R.id.logo)).check(matches(isDisplayed()));
+    }
+
+    @Test
+    public void goesToNext(){
+        EventBusIdlingResource2 eventBusIdlingResource = new EventBusIdlingResource2();
+        IdlingRegistry.getInstance().register(eventBusIdlingResource);
+        IdlingResourceSleeper.sleep(eventBusIdlingResource);
+        IdlingRegistry.getInstance().unregister(eventBusIdlingResource);
+        //onView(withId(R.id.drawer_layout)).check(matches(isDisplayed()));
+      //  intended(hasComponent(TrailsActivity.class.getName()));
+>>>>>>> Stashed changes
 
 
     }
 
+<<<<<<< Updated upstream
     //TODO: create test for intent
 }
+=======
+}
+>>>>>>> Stashed changes
