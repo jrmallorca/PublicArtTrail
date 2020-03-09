@@ -1,39 +1,64 @@
 package com.publicarttrail.googlemapspractice;
 
 import android.content.Intent;
-import android.app.Activity;
-import android.widget.ImageView;
-import android.view.View.OnClickListener;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
+import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-//start page
+import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
+import com.publicarttrail.googlemapspractice.networking.RetrofitService;
+import com.publicarttrail.googlemapspractice.networking.TrailsClient;
+import com.publicarttrail.googlemapspractice.pojo.Trail;
+
+import org.greenrobot.eventbus.EventBus;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+// Start page
 public class MainActivity extends AppCompatActivity {
-    private Button button;
     private ImageView logo;
 
-@Override
+    // Create the client that calls HTTP requests
+    TrailsClient trailsClient = RetrofitService
+            .getRetrofit()
+            .create(TrailsClient.class);
+
+    // Get the result from our GET request
+    private Callback<List<Trail>> trailsCallback = new Callback<List<Trail>>() {
+        @Override
+        public void onResponse(Call<List<Trail>> call, Response<List<Trail>> response) {
+            // Cache the trails
+            EventBus.getDefault().postSticky(new TrailAcquiredEvent(response.body()));
+
+            // Start TrailsActivity
+            Intent info = new Intent(MainActivity.this, TrailsActivity.class);
+            startActivity(info);
+        }
+
+        @Override
+        public void onFailure(Call<List<Trail>> call, Throwable t) {
+            t.printStackTrace();
+        }
+    };
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
-        button = findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openTrailsActivity();
-            }
-        });
 
-        logo = (ImageView) findViewById(R.id.logo);
+        // Set logo
+        logo = findViewById(R.id.logo);
+        logo.setImageResource(R.drawable.welcome);
 
-        logo.setImageResource(R.drawable.web_hi_res_512);
-    }
-    private void openTrailsActivity(){
-        Intent intent = new Intent(this, TrailsActivity.class);
-        startActivity(intent);
+        // Call GET request
+        trailsClient.getTrails()
+                .clone()
+                .enqueue(trailsCallback);
     }
 }
