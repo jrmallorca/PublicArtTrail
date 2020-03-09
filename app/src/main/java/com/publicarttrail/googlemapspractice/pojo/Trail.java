@@ -58,6 +58,13 @@ public class Trail {
         this.map = map;
     }
 
+<<<<<<< Updated upstream
+=======
+    public void setId(long id){ this.id = id; }
+    public void setName(String name){ this.name = name; }
+    public void setArtworks(List<Artwork> artWorks){ this.artworks = artWorks; }
+
+>>>>>>> Stashed changes
     // --- Marker methods ---
 
     public void addMarker(Artwork artwork, Context context) {
