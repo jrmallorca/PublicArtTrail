@@ -62,6 +62,7 @@ public class Trail {
     public void setName(String name){ this.name = name; }
     public void setArtworks(List<Artwork> artWorks){ this.artworks = artWorks; }
 
+
     // --- Marker methods ---
 
     public void addMarker(Artwork artwork, Context context) {
@@ -110,7 +111,7 @@ public class Trail {
     }
 
     // --- Zoom methods ---
-    
+
     // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
     public void zoomIn() {
         int padding = 70; // Offset from edges of the map in pixels
@@ -136,7 +137,7 @@ public class Trail {
         map.animateCamera(cu);
     }
 
-    // TODO: 13/02/2020 Should we remove if unused? 
+    // TODO: 13/02/2020 Should we remove if unused?
     @Deprecated
     // Another zoom in function (not used)
     public void zoom() {

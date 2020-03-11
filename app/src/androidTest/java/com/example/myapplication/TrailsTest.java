@@ -5,6 +5,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
+
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 
 import org.junit.Before;
@@ -29,6 +30,7 @@ public class TrailsTest {
         trail.setId(1);
         trail.setName("RFG");
         trail.setArtworks(artworks);
+
     }
 
     @Test
