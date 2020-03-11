@@ -52,6 +52,12 @@ public class InfoPage extends AppCompatActivity {
         super.onStop();
     }
 
+    @Override
+    public void onPause(){
+        super.onPause();
+        EventBus.getDefault().removeStickyEvent(ArtworkEvent.class);
+    }
+
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(ArtworkEvent event) {

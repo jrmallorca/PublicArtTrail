@@ -123,6 +123,12 @@ public class TrailsActivity extends AppCompatActivity
         EventBus.getDefault().register(this);
     }
 
+    @Override
+    public void onPause(){
+        super.onPause();
+        EventBus.getDefault().removeStickyEvent(TrailAcquiredEvent.class);
+    }
+
     // Unregister this activity as a subscriber for events
     @Override
     public void onStop() {
