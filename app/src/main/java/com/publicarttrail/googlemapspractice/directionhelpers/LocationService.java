@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
@@ -19,6 +18,7 @@ import com.google.android.gms.location.LocationServices;
 public class LocationService extends Service {
     FusedLocationProviderClient fusedLocationProviderClient;
     LocationCallback locationCallback;
+    int counter = 0;
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -47,8 +47,10 @@ public class LocationService extends Service {
                 Intent intent = new Intent("ACT_LOC");
                 intent.putExtra("latitude", locationResult.getLastLocation().getLatitude());
                 intent.putExtra("longitude", locationResult.getLastLocation().getLongitude());
+                intent.putExtra("number", counter );
 
                 sendBroadcast(intent);
+                counter++;
             }
         };
     }

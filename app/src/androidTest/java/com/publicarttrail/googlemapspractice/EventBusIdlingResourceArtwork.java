@@ -14,12 +14,12 @@ import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-public class EventBusIdlingResource implements IdlingResource{
+public class EventBusIdlingResourceArtwork implements IdlingResource{
     private boolean busUpdated;
     private volatile ResourceCallback resourceCallback;
 
 
-    public EventBusIdlingResource() {
+    public EventBusIdlingResourceArtwork() {
         busUpdated = false;
         EventBus.getDefault().register(this);
     }

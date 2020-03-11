@@ -10,6 +10,11 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments clearPackageData: 'true'
+
+    }
+    testOptions {
+        execution 'ANDROIDX_TEST_ORCHESTRATOR'
     }
     buildTypes {
         release {
@@ -39,34 +44,11 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestUtil 'androidx.test:orchestrator:1.2.0'
     androidTestImplementation("com.android.support.test.uiautomator:uiautomator-v18:2.1.1", {
         exclude group: "com.android.support", module: "support-annotations"
     })
 
-    task enableMockLocationForTestsOnDevice(type: Exec) {
-        Properties properties = new Properties()
-        properties.load(project.rootProject.file('local.properties').newDataInputStream())
-        def sdkDir = properties.getProperty('sdk.dir')
-        def adb = "$sdkDir/platform-tools/adb"
-        description 'enable mock location on connected android device before executing any android test'
-        commandLine "$adb", 'shell', 'appops', 'set', 'indian.fig.whatsaround', 'android:mock_location', 'allow'
-    }
 
-    afterEvaluate {
-        // Note: the app must be already installed on device in order to this to run!
-        connectedDebugAndroidTest.dependsOn enableMockLocationForTestsOnDevice
-        connectedAndroidTest.dependsOn enableMockLocationForTestsOnDevice
-    }
-
-
-// execute android tests before realising a new apk
-    tasks.whenTaskAdded { task ->
-        if (task.name == 'assembleRelease') {
-            task.dependsOn('enableMockLocationForTestsOnDevice')
-            task.dependsOn('testReleaseUnitTest') // Run unit tests for the release build
-            task.dependsOn('connectedAndroidTest') // Installs and runs instrumentation tests for all flavors on connected devices.
-
-        }
-    }
 
 }
