@@ -1,153 +1,56 @@
 package com.publicarttrail.googlemapspractice;
 
 
-<<<<<<< Updated upstream
-=======
+import android.Manifest;
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Rect;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.SystemClock;
-import android.os.*;
-import com.google.maps.android.SphericalUtil;
 
-
-
-import androidx.test.core.app.ActivityScenario;
->>>>>>> Stashed changes
-import androidx.test.espresso.DataInteraction;
-import androidx.test.espresso.IdlingRegistry;
-import androidx.test.espresso.ViewInteraction;
-import androidx.test.filters.LargeTest;
-import androidx.test.rule.ActivityTestRule;
-import androidx.test.runner.AndroidJUnit4;
-<<<<<<< Updated upstream
-
-import android.content.Intent;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewParent;
-
-import static androidx.test.InstrumentationRegistry.getInstrumentation;
-import static androidx.test.espresso.Espresso.onData;
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.Espresso.onIdle;
-
-import static androidx.test.espresso.Espresso.pressBack;
-import static androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu;
-import static androidx.test.espresso.action.ViewActions.*;
-import static androidx.test.espresso.assertion.ViewAssertions.*;
-import static androidx.test.espresso.matcher.ViewMatchers.*;
-import static org.mockito.Mockito.*;
-
-import com.publicarttrail.googlemapspractice.R;
-import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
-import com.publicarttrail.googlemapspractice.networking.RetrofitService;
-import com.publicarttrail.googlemapspractice.networking.TrailsClient;
-import com.publicarttrail.googlemapspractice.pojo.Artwork;
-import com.publicarttrail.googlemapspractice.pojo.Artwork.*;
-import com.publicarttrail.googlemapspractice.pojo.Trail;
-import org.greenrobot.eventbus.EventBus;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.TypeSafeMatcher;
-import org.hamcrest.core.IsInstanceOf;
-=======
-import androidx.test.uiautomator.UiDevice;
 import androidx.test.InstrumentationRegistry;
+import androidx.test.espresso.IdlingRegistry;
+import androidx.test.espresso.action.ViewActions;
+import androidx.test.rule.ActivityTestRule;
+import androidx.test.rule.GrantPermissionRule;
+import androidx.test.runner.AndroidJUnit4;
+import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObjectNotFoundException;
 import androidx.test.uiautomator.UiSelector;
 
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static org.junit.Assert.assertEquals;
-
-
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.SphericalUtil;
 import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 
-import static androidx.test.espresso.Espresso.onView;
-
 import org.greenrobot.eventbus.EventBus;
->>>>>>> Stashed changes
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-<<<<<<< Updated upstream
-import org.mockito.Mockito;
-=======
-
->>>>>>> Stashed changes
 
 import java.util.ArrayList;
 import java.util.List;
 
-<<<<<<< Updated upstream
-import retrofit2.*;
-import retrofit2.mock.BehaviorDelegate;
-import retrofit2.mock.MockRetrofit;
-import retrofit2.mock.NetworkBehavior;
-
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.anything;
-import static org.hamcrest.Matchers.is;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-//@LargeTest
-@RunWith(AndroidJUnit4.class)
-public class TrailsActivityTest {
-
-    private Artwork artwork1 = new Artwork(1, "TG", "H", "afwa", 2.3, 2.4, "ff");
-    private Callback<List<Trail>> trailsCallback = new Callback<List<Trail>>() {
-        @Override
-        public void onResponse(Call<List<Trail>> call, Response<List<Trail>> response) {
-            // Cache the trails
-            System.out.println("Hello StackOverflow");
-            EventBus.getDefault().postSticky(new TrailAcquiredEvent(response.body()));
-            //EspressoHandlingResource.decrement();
-            // Start TrailsActivity
-        }
-
-        @Override
-        public void onFailure(Call<List<Trail>> call, Throwable t) {
-            t.printStackTrace();
-        }
-    };
-
-    @Rule
-    public ActivityTestRule<TrailsActivity> mActivityTestRule = new ActivityTestRule<>(TrailsActivity.class, true, false);
-
-
-    @Before
-    public void setUp() throws Exception {
-        TrailsClient trailsClient = RetrofitService
-                .getRetrofit()
-                .create(TrailsClient.class);
-
-        trailsClient.getTrails()
-                .clone()
-                .enqueue(trailsCallback);
-=======
+import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-
-
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 @RunWith(AndroidJUnit4.class)
 public class TrailsActivityTest {
 
+    //before launching, setup an event bus
+    @Rule
+    public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(Manifest.permission.ACCESS_FINE_LOCATION);
     @Rule
     public ActivityTestRule<TrailsActivity> mActivityRule = new ActivityTestRule<TrailsActivity>(TrailsActivity.class) {
         @Override
@@ -180,100 +83,137 @@ public class TrailsActivityTest {
         mActivityRule.getActivity();
     }
 
+    //function for mocking moving user
+    public void setUpMovingUser(){
+        LatLng startPos = new LatLng(51.457899, -2.603351);
+        startUpdates(mActivityRule.getActivity(), new Handler(Looper.getMainLooper()),
+                startPos, 20, 5);
+    }
 
+    //function for mocking still user
+    public void setUpStillUser(){
+        LatLng startPos = new LatLng(51.457899, -2.603351);
+        startUpdates(mActivityRule.getActivity(), new Handler(Looper.getMainLooper()),
+                startPos, 20, 0);
+    }
+
+
+
+
+
+    //Test for initial view
     @Test
-    public void view() {
-        ff();
+    public void checkView() {
+
         onView(withId(R.id.drawer_layout)).check(matches(isDisplayed()));
         onView(withId(R.id.currentLocation)).check(matches(isDisplayed()));
         onView(withId(R.id.toolbar)).check(matches(isDisplayed()));
-        EventBusIdlingResource eventBusIdlingResource = new EventBusIdlingResource();
-        IdlingRegistry.getInstance().register(eventBusIdlingResource);
-        IdlingResourceSleeper.sleep(eventBusIdlingResource);
-        IdlingRegistry.getInstance().unregister(eventBusIdlingResource);
->>>>>>> Stashed changes
-
     }
 
+    //Tests if marker1 is  present (checks by clicking and ensuring no exception is thrown
     @Test
-<<<<<<< Updated upstream
-    public void customIntentToStartActivity() {
-        Intent intent = new Intent(Intent.ACTION_PICK);
-        mActivityTestRule.launchActivity(intent);
-        trailsActivityTest();
-    }
-
-
-    //EventBus eventBus = Mockito.mock(EventBus.class);
-
-
-
-    public void trailsActivityTest() {
-        Assert.assertNotNull(trailsCallback);
-        mainActivityTest2();
-    }
-
-
-    public void mainActivityTest2() {
-        ViewInteraction button = onView(
-                allOf(withId(R.id.currentLocation),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(R.id.drawer_layout),
-                                        0),
-                                2),
-                        isDisplayed()));
-        button.check(matches(isDisplayed()));
-
-    }
-
-    private static Matcher<View> childAtPosition(
-            final Matcher<View> parentMatcher, final int position) {
-
-        return new TypeSafeMatcher<View>() {
-            @Override
-            public void describeTo(Description description) {
-                description.appendText("Child at position " + position + " in parent ");
-                parentMatcher.describeTo(description);
-            }
-
-            @Override
-            public boolean matchesSafely(View view) {
-                ViewParent parent = view.getParent();
-                return parent instanceof ViewGroup && parentMatcher.matches(parent)
-                        && view.equals(((ViewGroup) parent).getChildAt(position));
-            }
-        };
-    }
-}
-=======
-    public void markers() {
+    public void checkMarker1() throws UiObjectNotFoundException{
         UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         UiObject marker1 = mDevice.findObject(new UiSelector().descriptionContains("Tyndall Gate"));
-        UiObject marker2 = mDevice.findObject(new UiSelector().descriptionContains("Follow Me"));
-        Assert.assertNotNull(marker1);
-        Assert.assertNotNull(marker2);
+        marker1.click();
+
     }
 
+    //Tests if marker2 is  present (checks by clicking and ensuring no exception is thrown
+
+    @Test
+    public void checkMarker2() throws UiObjectNotFoundException{
+        UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject marker2 = mDevice.findObject(new UiSelector().descriptionContains("Follow Me"));
+        marker2.click();
+    }
+
+    //Tests if marker is updated for user
+    @Test
+    public void currentLocationForMovingUser()throws UiObjectNotFoundException, InterruptedException{
+        setUpMovingUser(); //set up mock location
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click()); //click button
+        Thread.sleep(2000);
+        UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject currentLocation = mDevice.
+                findObject(new UiSelector().descriptionContains("You are here!")); //find current loc marker
+        currentLocation.click(); //make sure marker is present (there is no other way to check)
+        Rect rects1 = currentLocation.getVisibleBounds(); //get position on screen
+        Thread.sleep(2000);
+
+        UiDevice mDevice2 = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject currentLocation2 = mDevice2.
+                findObject(new UiSelector().descriptionContains("You are here!"));//find current loc marker after 3s
+        Rect rects2 = currentLocation2.getVisibleBounds(); //get position on screen
+
+        Assert.assertNotEquals(rects1, rects2); //confirm both positions are not equal
+        currentLocation.click(); //click button to go back to normal screen
+
+
+    }
+
+    //Tests if marker is updated for user
+    @Test
+    public void currentLocationForStillUser()throws UiObjectNotFoundException, InterruptedException{
+        setUpStillUser(); //set up mock location
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click());
+
+        UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject currentLocation = mDevice.
+                findObject(new UiSelector().descriptionContains("You are here!")); //find current loc marker
+        currentLocation.click(); //make sure marker is present (there is no other way to check)
+        Rect rects1 = currentLocation.getVisibleBounds(); //get position on screen
+        Thread.sleep(3000);
+
+        UiDevice mDevice2 = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject currentLocation2 = mDevice2.
+                findObject(new UiSelector().descriptionContains("You are here!"));//find current loc marker after 3s
+        Rect rects2 = currentLocation2.getVisibleBounds(); //get position on screen
+
+
+        Assert.assertEquals(rects1, rects2); //confirm both positions are equal
+        currentLocation.click(); //click button to go back to normal screen
+
+    }
+
+
+
+
+    //TODO test for picture
+    //Tests info window and info page
+    //Can't seem to figure out how to test infowindow content
     @Test
     public void infoWindow() throws UiObjectNotFoundException, InterruptedException {
         UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        UiObject marker1 = mDevice.findObject(new UiSelector().descriptionContains("Tyndall Gate"));
-        Thread.sleep(10000);
+        UiObject marker2 = mDevice.findObject(new UiSelector().descriptionContains("Follow Me"));
 
-        marker1.click();
+        marker2.click(); //click on marker 2
+        Thread.sleep(1000);  //1s for infowindow to appear
 
-        Rect rects = marker1.getBounds();
-        mDevice.click(rects.centerX(), rects.top - 30);
+        Rect rects = marker2.getBounds();
+        mDevice.click(rects.centerX(), rects.top - 50);//click on infowindow using position
+                                                          // obtained from bounds
 
-        EventBusIdlingResource eventBusIdlingResource = new EventBusIdlingResource();
-        IdlingRegistry.getInstance().register(eventBusIdlingResource);
-        IdlingResourceSleeper.sleep(eventBusIdlingResource);
-        IdlingRegistry.getInstance().unregister(eventBusIdlingResource);
+        Thread.sleep(5000); //wait for click to be registered?
+
+        //wait until eventbus for artwork is posted onto
+        EventBusIdlingResourceArtwork eventBusIdlingResourceArtwork = new EventBusIdlingResourceArtwork();
+        IdlingRegistry.getInstance().register(eventBusIdlingResourceArtwork);
+        IdlingResourceSleeper.sleep(eventBusIdlingResourceArtwork);
+        IdlingRegistry.getInstance().unregister(eventBusIdlingResourceArtwork);
+
+        Thread.sleep(5000); //wait for view to change
 
         onView(withId(R.id.info_page)).check(matches(isDisplayed()));
+        onView(withId(R.id.name)).check(matches(withText("Follow Me")));
+        onView(withId(R.id.artist)).check(matches(withText("??")));
+        onView(withId(R.id.description)).check(matches(withText("Description")));
+
     }
 
+    //**********************************************************************************************
+
+    //function that mocks location
     public static void startUpdates(
             final Activity activity, final Handler mHandler, final LatLng pos,
             final double heading, final double movement) {
@@ -300,24 +240,19 @@ public class TrailsActivityTest {
 
 
                 // compute next position
+                // (In a test utility class in this example: LocationUtils.java)
+                //  Utility - uses SphericalUtil to maintain a position based on
+                //  initial starting position, heading and movement value (in
+                //   meters) applied every 1 second.
                 myPos = SphericalUtil.computeOffset(myPos, movement, heading);
                 mHandler.postDelayed(this, 1000);
             }
         }, 1000);
     }
-    public void ff(){
-        LatLng startPos = new LatLng(51.458530, -2.603452);
-        startUpdates(mActivityRule.getActivity(), new Handler(Looper.getMainLooper()),
-                startPos, 340, 25);
-    }
 
-    // (In a test utility class in this example: LocationUtils.java)
-// Utility - uses SphericalUtil to maintain a position based on
-//           initial starting position, heading and movement value (in
-//           meters) applied every 1 second.  (So a movement value
-//           of 25 equates to 25m/s which equates to ~55MPH)
+
+
 
 
 
 }
->>>>>>> Stashed changes

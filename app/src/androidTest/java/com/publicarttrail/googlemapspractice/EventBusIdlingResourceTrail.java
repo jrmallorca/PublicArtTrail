@@ -9,12 +9,12 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-public class EventBusIdlingResource2 implements IdlingResource{
+public class EventBusIdlingResourceTrail implements IdlingResource{
     private boolean busUpdated;
     private volatile ResourceCallback resourceCallback;
 
 
-    public EventBusIdlingResource2() {
+    public EventBusIdlingResourceTrail() {
         busUpdated = false;
         EventBus.getDefault().register(this);
     }

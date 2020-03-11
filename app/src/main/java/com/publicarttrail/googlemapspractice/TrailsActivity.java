@@ -8,9 +8,9 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewTreeObserver;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -62,12 +62,14 @@ public class TrailsActivity extends AppCompatActivity
 
     private static final int Request_Code = 101;
     private Button currentLocationButton;
-    private Marker currentLocationMarker;
+    private Marker currentLocationMarker = null;
     private Boolean isCurrentLocSet;
     private Polyline trailPolyline;
     private Polyline locationPolyline;
     private Boolean askingForDirection = false;
     private Intent intent;
+    private int counter=-1;
+    private Boolean isPolylineForTrail = true;
 
     // Selecting trails attributes
     private List<Trail> trails = new ArrayList<>();
@@ -172,17 +174,19 @@ public class TrailsActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         if (trailSelected != trails.get(menuItem.getItemId())) {
             // Hide markers from previous trail
+            isPolylineForTrail = true;
             trailSelected.artworkMarkersVisibility(false);
             if (isCurrentLocSet){
                 currentLocationMarker.setVisible(false);
                 locationPolyline.setVisible(false);
             }
-
+            //isPolylineForTrail = true;
             if (trailPolyline != null) trailPolyline.setVisible(false);
             trailSelected = trails.get(menuItem.getItemId());
             trailSelected.artworkMarkersVisibility(true);
             trailSelected.zoomIn();
             trailSelected.showTrail(TrailsActivity.this);
+          //  isPolylineForTrail = false;
         }
 
         setTitle(trailSelected.getName());
@@ -216,10 +220,17 @@ public class TrailsActivity extends AppCompatActivity
         if (!isCurrentLocSet) {
             startService();
         } else{
+            Log.d("mylogr",  "current_loc_is_null");
+            //askingForDirection = false;
             isCurrentLocSet = false;
             stopService();
+            isCurrentLocSet = false;
+            currentLocationMarker.remove();
             currentLocationMarker = null;
             locationPolyline.setVisible(false);
+            locationPolyline.remove();
+            locationPolyline = null;
+           // locationPolyline = null;
             trailSelected.zoomIn();
         }
     }
@@ -266,7 +277,7 @@ public class TrailsActivity extends AppCompatActivity
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(TrailAcquiredEvent event) {
-        EventBus.getDefault().removeStickyEvent(event);
+        //EventBus.getDefault().removeStickyEvent(event);
         trails = event.trails;
 
         trailSelected = trails.get(0);
@@ -328,22 +339,56 @@ public class TrailsActivity extends AppCompatActivity
         PolylineOptions polylineOptions = (PolylineOptions) values[0];
         List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(20));
 
-        //if polyline is for direction from current location to the trail
-        if (askingForDirection) {
+        if (isPolylineForTrail){
+            trailPolyline = mMap.addPolyline(polylineOptions);
+            trailPolyline.setColor(Color.BLUE);
+            trailPolyline.setPattern(pattern);
+            isPolylineForTrail = false;
+        }
 
-            locationPolyline = mMap.addPolyline(polylineOptions);
-            locationPolyline.setColor(Color.RED);
-            locationPolyline.setPattern(pattern);
-            askingForDirection = false;
+        else{
+            Log.d("mylogr",  "check");
+            if (locationPolyline!=null){
+                locationPolyline.setPoints(polylineOptions.getPoints());
+                locationPolyline.setVisible(true);
+            }
+            else {
+                locationPolyline = mMap.addPolyline(polylineOptions);
+                locationPolyline.setColor(Color.RED);
+                locationPolyline.setPattern(pattern);
+            }
+
+            if(!isCurrentLocSet){locationPolyline.setVisible(false);}
+            //askingForDirection = false;
+
+        }
+
+        //if polyline is for direction from current location to the trail
+      /*  if (askingForDirection) {
+
+            Log.d("mylogr",  "check");
+            if (locationPolyline!=null){
+                locationPolyline.setPoints(polylineOptions.getPoints());
+                locationPolyline.setVisible(true);
+            }
+            else {
+                locationPolyline = mMap.addPolyline(polylineOptions);
+                locationPolyline.setColor(Color.RED);
+                locationPolyline.setPattern(pattern);
+            }
+
+            if(!isCurrentLocSet){locationPolyline.setVisible(false);}
+            //askingForDirection = false;
         }
         //if polyline is for trail
         else {
+            //Log.d("mylogr",  "why");
 
             trailPolyline = mMap.addPolyline(polylineOptions);
             trailPolyline.setColor(Color.BLUE);
             trailPolyline.setPattern(pattern);
 
-        }
+        }*/
     }
 
     //inner class (describes what to do when tracking starts)
@@ -351,20 +396,27 @@ public class TrailsActivity extends AppCompatActivity
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if(intent.getAction().equals("ACT_LOC")){
+            int number = intent.getIntExtra("number", 0);
+            if(intent.getAction().equals("ACT_LOC") && number!=counter){
 
+                counter=number;
                 double latitude = intent.getDoubleExtra("latitude", 0f);
                 double longitude = intent.getDoubleExtra("longitude", 0f);
                 LatLng latLng = new LatLng(latitude, longitude);
 
-                if(currentLocationMarker!=null){
+                if(currentLocationMarker!=null&&locationPolyline!=null){
                     currentLocationMarker.remove();
+                   // locationPolyline.setVisible(false);
+                    //locationPolyline.remove();
                     setCurrentLocationMarker(latLng);
+                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+
                 }
                 else{
                     setCurrentLocationMarker(latLng);
-                    trailSelected.zoomFit(currentLocationMarker);
                     trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                    trailSelected.zoomFit(currentLocationMarker);
+
                 }
             }
         }

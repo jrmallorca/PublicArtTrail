@@ -55,7 +55,7 @@ public class InfoPage extends AppCompatActivity {
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(ArtworkEvent event) {
-        EventBus.getDefault().removeStickyEvent(event);
+        //EventBus.getDefault().removeStickyEvent(event);
 
         Artwork artwork = event.artwork;
 
