@@ -10,10 +10,14 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.view.Gravity;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.espresso.action.ViewActions;
+import androidx.test.espresso.contrib.DrawerActions;
+import androidx.test.espresso.contrib.DrawerMatchers;
+import androidx.test.espresso.contrib.NavigationViewActions;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.runner.AndroidJUnit4;
@@ -30,6 +34,7 @@ import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 
 import org.greenrobot.eventbus.EventBus;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,6 +44,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
+import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
@@ -173,6 +179,30 @@ public class TrailsActivityTest {
 
         Assert.assertEquals(rects1, rects2); //confirm both positions are equal
         currentLocation.click(); //click button to go back to normal screen
+
+    }
+
+    @Test
+    public void clickOnYourNavigationItem_ShowsYourScreen() throws InterruptedException {
+        // Open Drawer to click on navigation.
+        onView(withId(R.id.drawer_layout))
+                .check(matches(DrawerMatchers.isClosed(Gravity.LEFT))) // Left Drawer should be closed.
+                .perform(DrawerActions.open()); // Open Drawer
+
+        // Start the screen of your activity.
+        onView(withId(R.id.nav_view))
+                .perform(NavigationViewActions.navigateTo(2));
+
+        Thread.sleep(5000); //wait for view to change
+
+        onView(withId(R.id.list_view)).check(matches(isDisplayed()));
+        onView(withId(R.id.mySpinner)).check(matches(isDisplayed()));
+        onView(withId(R.id.recycler_view)).check(matches(isDisplayed()));
+        onView(withId(R.id.trail)).check(matches(isDisplayed()));
+        onView(withId(R.id.trail)).check(matches(withText("Trails")));
+        onView(withId(R.id.mySpinner)).perform(ViewActions.click());
+        onData(Matchers.allOf(Matchers.is(Matchers.instanceOf(String.class)))).atPosition(0).check(matches(withText("All")));
+        onData(Matchers.allOf(Matchers.is(Matchers.instanceOf(String.class)))).atPosition(1).check(matches(withText("RFG")));
 
     }
 

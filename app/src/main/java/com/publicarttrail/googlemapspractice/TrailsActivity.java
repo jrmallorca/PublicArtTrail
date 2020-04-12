@@ -103,6 +103,8 @@ public class TrailsActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
+
+
         // This accounts for rotation, opening app again, etc.
         if (savedInstanceState == null) {
             // Set first trail (Royal Fort Gardens) as selected item
@@ -114,19 +116,39 @@ public class TrailsActivity extends AppCompatActivity
 
         // Create the buttons
         createButtons();
+        EventBus.getDefault().register(this);
+        Log.d("debugon", "createcalled");
+
+
+
     }
 
     // Register this activity as a subscriber for events
     @Override
     public void onStart() {
         super.onStart();
-        EventBus.getDefault().register(this);
+        //EventBus.getDefault().register(this);
+        Log.d("debugon", "startcalled");
+
+
     }
 
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        //EventBus.getDefault().register(this);
+        Log.d("debugon", "resumecalled");
+
+
+    }
     @Override
     public void onPause(){
+        EventBus.getDefault().unregister(this);
         super.onPause();
-        EventBus.getDefault().removeStickyEvent(TrailAcquiredEvent.class);
+        Log.d("debugon", "pausecalled");
+
+        // EventBus.getDefault().removeStickyEvent(TrailAcquiredEvent.class);
     }
 
     // Unregister this activity as a subscriber for events
@@ -134,6 +156,16 @@ public class TrailsActivity extends AppCompatActivity
     public void onStop() {
         EventBus.getDefault().unregister(this);
         super.onStop();
+        Log.d("debugon", "stopcalled");
+
+    }
+
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
+        Log.d("debugon", "destroycalled");
+
     }
 
     // When the map is ready, add markers for all trails, sets current location, and creates a listener
@@ -151,9 +183,11 @@ public class TrailsActivity extends AppCompatActivity
             menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
 
             // Add marker for each artwork in each trail
+
             for (Artwork a : t.getArtworks()) {
                 t.addMarker(a, TrailsActivity.this);
             }
+            menu.add(R.id.nav_trails_group, trails.size()+1, Menu.NONE, "List View");
         }
 
         //custom infowindow set up (check newly created class)
@@ -170,6 +204,7 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected.artworkMarkersVisibility(true);
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this);
+
     }
 
     // -- BUTTONS --
@@ -178,25 +213,33 @@ public class TrailsActivity extends AppCompatActivity
     // If we return false, no item will be selected even if the action was triggered
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-        if (trailSelected != trails.get(menuItem.getItemId())) {
-            // Hide markers from previous trail
-            isPolylineForTrail = true;
-            trailSelected.artworkMarkersVisibility(false);
-            if (isCurrentLocSet){
-                currentLocationMarker.setVisible(false);
-                locationPolyline.setVisible(false);
-            }
-            //isPolylineForTrail = true;
-            if (trailPolyline != null) trailPolyline.setVisible(false);
-            trailSelected = trails.get(menuItem.getItemId());
-            trailSelected.artworkMarkersVisibility(true);
-            trailSelected.zoomIn();
-            trailSelected.showTrail(TrailsActivity.this);
-          //  isPolylineForTrail = false;
-        }
 
-        setTitle(trailSelected.getName());
-        drawer.closeDrawer(GravityCompat.START);
+        if(menuItem.getItemId()!=trails.size()+1) {
+            if (trailSelected != trails.get(menuItem.getItemId())) {
+                // Hide markers from previous trail
+                isPolylineForTrail = true;
+                trailSelected.artworkMarkersVisibility(false);
+                if (isCurrentLocSet) {
+                    currentLocationMarker.setVisible(false);
+                    locationPolyline.setVisible(false);
+                }
+                //isPolylineForTrail = true;
+                if (trailPolyline != null) trailPolyline.setVisible(false);
+                trailSelected = trails.get(menuItem.getItemId());
+                trailSelected.artworkMarkersVisibility(true);
+                trailSelected.zoomIn();
+                trailSelected.showTrail(TrailsActivity.this);
+                //  isPolylineForTrail = false;
+            }
+
+            setTitle(trailSelected.getName());
+            drawer.closeDrawer(GravityCompat.START);
+        }
+        else{
+
+            Intent info = new Intent(TrailsActivity.this, ListPage.class);
+            startActivity(info);
+        }
         return true;
     }
 
@@ -236,7 +279,7 @@ public class TrailsActivity extends AppCompatActivity
             locationPolyline.setVisible(false);
             locationPolyline.remove();
             locationPolyline = null;
-           // locationPolyline = null;
+            // locationPolyline = null;
             trailSelected.zoomIn();
         }
     }
@@ -290,6 +333,7 @@ public class TrailsActivity extends AppCompatActivity
 
         // Setting up the map
         // Must be called here so that we can guarantee trails isn't null
+        Log.d("eventbus22", "check");
         SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         supportMapFragment.getMapAsync(TrailsActivity.this);
@@ -331,7 +375,7 @@ public class TrailsActivity extends AppCompatActivity
         switch (requestCode) {
             case Request_Code:
                 if (grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startService();
+                    startService();
                 }
                 break;
         }
@@ -412,7 +456,7 @@ public class TrailsActivity extends AppCompatActivity
 
                 if(currentLocationMarker!=null&&locationPolyline!=null){
                     currentLocationMarker.remove();
-                   // locationPolyline.setVisible(false);
+                    // locationPolyline.setVisible(false);
                     //locationPolyline.remove();
                     setCurrentLocationMarker(latLng);
                     trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
@@ -428,3 +472,4 @@ public class TrailsActivity extends AppCompatActivity
         }
     }
 }
+
