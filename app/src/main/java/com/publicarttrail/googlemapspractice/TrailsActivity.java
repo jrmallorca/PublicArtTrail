@@ -68,7 +68,7 @@ public class TrailsActivity extends AppCompatActivity
     private Polyline locationPolyline;
     private Boolean askingForDirection = false;
     private Intent intent;
-    private int counter=-1;
+    private int counter = -1;
     private Boolean isPolylineForTrail = true;
 
     // Selecting trails attributes
@@ -103,8 +103,6 @@ public class TrailsActivity extends AppCompatActivity
         drawer.addDrawerListener(toggle);
         toggle.syncState();
 
-
-
         // This accounts for rotation, opening app again, etc.
         if (savedInstanceState == null) {
             // Set first trail (Royal Fort Gardens) as selected item
@@ -116,11 +114,9 @@ public class TrailsActivity extends AppCompatActivity
 
         // Create the buttons
         createButtons();
+
         EventBus.getDefault().register(this);
         Log.d("debugon", "createcalled");
-
-
-
     }
 
     // Register this activity as a subscriber for events
@@ -183,11 +179,10 @@ public class TrailsActivity extends AppCompatActivity
             menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
 
             // Add marker for each artwork in each trail
-
             for (Artwork a : t.getArtworks()) {
                 t.addMarker(a, TrailsActivity.this);
             }
-            menu.add(R.id.nav_trails_group, trails.size()+1, Menu.NONE, "List View");
+            menu.add(R.id.nav_trails_group, trails.size() + 1, Menu.NONE, "List View");
         }
 
         //custom infowindow set up (check newly created class)
@@ -302,7 +297,6 @@ public class TrailsActivity extends AppCompatActivity
         } else return true;
     }
 
-    // TODO: 18/02/2020 Can we use EventBus to transfer these objects from here to InfoPage?
     //infowindow click listener
     private void infoWindowListener() {
         mMap.setOnInfoWindowClickListener(marker -> {

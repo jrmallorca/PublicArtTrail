@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
             // Start TrailsActivity
             Intent info = new Intent(MainActivity.this, TrailsActivity.class);
             startActivity(info);
+            finish();
         }
 
         @Override
