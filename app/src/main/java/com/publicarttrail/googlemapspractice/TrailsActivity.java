@@ -38,7 +38,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.navigation.NavigationView;
 import com.publicarttrail.googlemapspractice.directionhelpers.LocationService;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
-import com.publicarttrail.googlemapspractice.events.ArtworkEvent;
+import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
 import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
@@ -49,6 +49,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -71,10 +72,13 @@ public class TrailsActivity extends AppCompatActivity
     private int counter = -1;
     private Boolean isPolylineForTrail = true;
 
-    // Selecting trails attributes
+    // Event-related fields
+    private final int EVENT_LIMIT = 2;
+    private int eventCounter;
     private List<Trail> trails = new ArrayList<>();
+    private List<Artwork> artworks = new ArrayList<>();
     // TODO: 09/02/2020 Possibility to replace this with id from Trail???
-    private Trail trailSelected;
+    private Trail trailSelected; // Selecting trails attributes
 
     // -- ACTIVITY RELATED METHODS --
 
@@ -125,8 +129,6 @@ public class TrailsActivity extends AppCompatActivity
         super.onStart();
         //EventBus.getDefault().register(this);
         Log.d("debugon", "startcalled");
-
-
     }
 
 
@@ -135,9 +137,8 @@ public class TrailsActivity extends AppCompatActivity
         super.onResume();
         //EventBus.getDefault().register(this);
         Log.d("debugon", "resumecalled");
-
-
     }
+
     @Override
     public void onPause(){
         EventBus.getDefault().unregister(this);
@@ -153,7 +154,6 @@ public class TrailsActivity extends AppCompatActivity
         EventBus.getDefault().unregister(this);
         super.onStop();
         Log.d("debugon", "stopcalled");
-
     }
 
     @Override
@@ -161,7 +161,6 @@ public class TrailsActivity extends AppCompatActivity
         EventBus.getDefault().unregister(this);
         super.onDestroy();
         Log.d("debugon", "destroycalled");
-
     }
 
     // When the map is ready, add markers for all trails, sets current location, and creates a listener
@@ -169,21 +168,24 @@ public class TrailsActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         Menu menu = navigationView.getMenu();
-        // Set map for all trails
+
+        for (Artwork a : artworks) {
+            Marker marker = mMap.addMarker(
+                    new MarkerOptions().position(a.getLatLng())
+                            .title(a.getName())
+                            .snippet(a.getCreator())
+                            .icon(bitmapDescriptorFromVector(context, numberMarker(i + 1)))
+            );
+        }
+
+        // TODO: 16/04/2020 Turn this into a submenu afterwards perhaps
         for (Trail t : trails) {
             t.setMap(mMap);
-
-            // Add menu item for each trail
-            menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName());
-
-            // Add marker for each artwork in each trail
-            for (Artwork a : t.getArtworks()) {
-                t.addMarker(a, TrailsActivity.this);
-            }
-            menu.add(R.id.nav_trails_group, trails.size() + 1, Menu.NONE, "List View");
+            menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
+            t.addMarkers(TrailsActivity.this); // Add marker for each artwork in each trail
         }
+        menu.add(R.id.nav_trails_group, trails.size() + 1, Menu.NONE, "List View");
 
         //custom infowindow set up (check newly created class)
         CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, trails);
@@ -199,7 +201,6 @@ public class TrailsActivity extends AppCompatActivity
         trailSelected.artworkMarkersVisibility(true);
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this);
-
     }
 
     // -- BUTTONS --
@@ -208,9 +209,8 @@ public class TrailsActivity extends AppCompatActivity
     // If we return false, no item will be selected even if the action was triggered
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-
         if(menuItem.getItemId()!=trails.size()+1) {
-            if (trailSelected != trails.get(menuItem.getItemId())) {
+            if (trailSelected != trails.get(menuItem.getItemId() - 1)) {
                 // Hide markers from previous trail
                 isPolylineForTrail = true;
                 trailSelected.artworkMarkersVisibility(false);
@@ -220,7 +220,7 @@ public class TrailsActivity extends AppCompatActivity
                 }
                 //isPolylineForTrail = true;
                 if (trailPolyline != null) trailPolyline.setVisible(false);
-                trailSelected = trails.get(menuItem.getItemId());
+                trailSelected = trails.get(menuItem.getItemId() - 1);
                 trailSelected.artworkMarkersVisibility(true);
                 trailSelected.zoomIn();
                 trailSelected.showTrail(TrailsActivity.this);
@@ -229,9 +229,7 @@ public class TrailsActivity extends AppCompatActivity
 
             setTitle(trailSelected.getName());
             drawer.closeDrawer(GravityCompat.START);
-        }
-        else{
-
+        } else {
             Intent info = new Intent(TrailsActivity.this, ListPage.class);
             startActivity(info);
         }
@@ -302,7 +300,10 @@ public class TrailsActivity extends AppCompatActivity
         mMap.setOnInfoWindowClickListener(marker -> {
             // Cache the artwork
             EventBus.getDefault()
-                    .postSticky(new ArtworkEvent(trailSelected.getArtworkMap().get(marker)));
+                    .postSticky(new ArtworkAcquiredEvent(Collections.singletonList(trailSelected
+                                    .getArtworkMap()
+                                    .get(marker)))
+                    );
 
             Intent info = new Intent(TrailsActivity.this, InfoPage.class);
             startActivity(info);
@@ -320,21 +321,40 @@ public class TrailsActivity extends AppCompatActivity
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(TrailAcquiredEvent event) {
-        //EventBus.getDefault().removeStickyEvent(event);
+        EventBus.getDefault().removeStickyEvent(event);
         trails = event.trails;
-
         trailSelected = trails.get(0);
 
         // Setting up the map
         // Must be called here so that we can guarantee trails isn't null
-        Log.d("eventbus22", "check");
-        SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        supportMapFragment.getMapAsync(TrailsActivity.this);
+        eventCounter++;
+        if (eventCounter == EVENT_LIMIT) {
+            Log.d("eventbus22", "check");
+            SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
+            supportMapFragment.getMapAsync(TrailsActivity.this);
+        }
+    }
+
+    // Called when an ArtworkAcquiredEvent has been posted
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    public void onEvent(ArtworkAcquiredEvent event) {
+        EventBus.getDefault().removeStickyEvent(event);
+        artworks = event.artworks;
+
+        // Setting up the map
+        // Must be called here so that we can guarantee trails isn't null
+        eventCounter++;
+        if (eventCounter == EVENT_LIMIT) {
+            Log.d("eventbus22", "check");
+            SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
+                    .findFragmentById(R.id.map);
+            supportMapFragment.getMapAsync(TrailsActivity.this);
+        }
     }
 
     //start tracking
-    void startService(){
+    void startService() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]
@@ -378,8 +398,6 @@ public class TrailsActivity extends AppCompatActivity
     //when url comes
     @Override
     public void onTaskDone(Object... values) {
-
-
         PolylineOptions polylineOptions = (PolylineOptions) values[0];
         List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(20));
 
@@ -388,23 +406,19 @@ public class TrailsActivity extends AppCompatActivity
             trailPolyline.setColor(Color.BLUE);
             trailPolyline.setPattern(pattern);
             isPolylineForTrail = false;
-        }
-
-        else{
+        } else{
             Log.d("mylogr",  "check");
             if (locationPolyline!=null){
                 locationPolyline.setPoints(polylineOptions.getPoints());
                 locationPolyline.setVisible(true);
-            }
-            else {
+            } else {
                 locationPolyline = mMap.addPolyline(polylineOptions);
                 locationPolyline.setColor(Color.RED);
                 locationPolyline.setPattern(pattern);
             }
 
-            if(!isCurrentLocSet){locationPolyline.setVisible(false);}
+            if(!isCurrentLocSet) locationPolyline.setVisible(false);
             //askingForDirection = false;
-
         }
 
         //if polyline is for direction from current location to the trail

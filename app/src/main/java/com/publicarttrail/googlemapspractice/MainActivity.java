@@ -6,47 +6,31 @@ import android.widget.ImageView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
 import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
+import com.publicarttrail.googlemapspractice.networking.BackEndAPI;
 import com.publicarttrail.googlemapspractice.networking.RetrofitService;
-import com.publicarttrail.googlemapspractice.networking.TrailsClient;
-import com.publicarttrail.googlemapspractice.pojo.Trail;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 
+import static io.reactivex.rxjava3.core.Observable.combineLatest;
+
+// TODO: 16/04/2020 Change so that artwork and client finish then change to different activity 
 // Start page
 public class MainActivity extends AppCompatActivity {
     private ImageView logo;
 
-    // Create the client that calls HTTP requests
-    TrailsClient trailsClient = RetrofitService
+    // Create the clients that calls HTTP requests
+    BackEndAPI backEndAPI = RetrofitService
             .getRetrofit()
-            .create(TrailsClient.class);
-
-    // Get the result from our GET request
-    private Callback<List<Trail>> trailsCallback = new Callback<List<Trail>>() {
-        @Override
-        public void onResponse(Call<List<Trail>> call, Response<List<Trail>> response) {
-            // Cache the trails
-            EventBus.getDefault().postSticky(new TrailAcquiredEvent(response.body()));
-
-            // Start TrailsActivity
-            Intent info = new Intent(MainActivity.this, TrailsActivity.class);
-            startActivity(info);
-            finish();
-        }
-
-        @Override
-        public void onFailure(Call<List<Trail>> call, Throwable t) {
-            t.printStackTrace();
-        }
-    };
+            .create(BackEndAPI.class);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,9 +41,26 @@ public class MainActivity extends AppCompatActivity {
         logo = findViewById(R.id.logo);
         logo.setImageResource(R.drawable.welcome);
 
-        // Call GET request
-        trailsClient.getTrails()
-                .clone()
-                .enqueue(trailsCallback);
+        // Make 2 asynchronous calls, do something with results, then start new activity
+        combineLatest(backEndAPI.getTrails(), backEndAPI.getArtworks(), (trails, artworks) -> {
+            // Cache the results
+            EventBus.getDefault().postSticky(new TrailAcquiredEvent(trails));
+            EventBus.getDefault().postSticky(new ArtworkAcquiredEvent(artworks));
+
+            // Signal that we've finished caching, next observer will receive the Object
+            return new Object();
+        })
+        .subscribeOn(Schedulers.io()) // Where the request is processed. If omitted the computation is done on current thread.
+        .observeOn(AndroidSchedulers.mainThread()) // Results are emitted on the specified thread - in this case the UI thread.
+        .subscribe( // Will be triggered if all requests will end successfully (4xx and 5xx also are successful requests too)
+            o -> { // Start TrailsActivity on successful completion of all requests
+                Intent info = new Intent(MainActivity.this, TrailsActivity.class);
+                startActivity(info);
+                finish();
+            },
+
+            // Will be triggered if any error during requests will happen
+            Throwable::printStackTrace
+        );
     }
 }

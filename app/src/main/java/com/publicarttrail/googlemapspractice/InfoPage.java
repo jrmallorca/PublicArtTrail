@@ -7,7 +7,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
-import com.publicarttrail.googlemapspractice.events.ArtworkEvent;
+import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 
 import org.greenrobot.eventbus.EventBus;
@@ -55,15 +55,14 @@ public class InfoPage extends AppCompatActivity {
     @Override
     public void onPause(){
         super.onPause();
-        EventBus.getDefault().removeStickyEvent(ArtworkEvent.class);
+        EventBus.getDefault().removeStickyEvent(ArtworkAcquiredEvent.class);
     }
 
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
-    public void onEvent(ArtworkEvent event) {
-        //EventBus.getDefault().removeStickyEvent(event);
-
-        Artwork artwork = event.artwork;
+    public void onEvent(ArtworkAcquiredEvent event) {
+        EventBus.getDefault().removeStickyEvent(event);
+        Artwork artwork = event.artworks.get(0);
 
         setTitle(artwork.getName());
         nameText.setText(artwork.getName());
