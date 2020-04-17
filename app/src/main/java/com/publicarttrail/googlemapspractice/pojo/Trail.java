@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 // POJO converted from JSON
 public class Trail {
@@ -58,23 +59,34 @@ public class Trail {
         this.map = map;
     }
 
-    public void setId(long id){ this.id = id; }
-    public void setName(String name){ this.name = name; }
-    public void setArtworks(List<Artwork> artWorks){ this.artworks = artWorks; }
+    public void setId(long id) { this.id = id; }
 
+    public void setName(String name) { this.name = name; }
+
+    public void setArtworks(List<Artwork> artWorks) { this.artworks = artWorks; }
 
     // --- Marker methods ---
 
-    public void addMarker(Artwork artwork, Context context) {
-        Marker marker = map.addMarker(new MarkerOptions().position(artwork.getLatLng())
-                .title(artwork.getName())
-                .snippet(artwork.getCreator())
-                // TODO: 11/02/2020 Replace numberMarker parameter with Artwork id?
-                .icon(bitmapDescriptorFromVector(context, numberMarker(markers.size() + 1))));
-        artworkMap.put(marker, artwork);
-        marker.setVisible(false);
-        markers.add(marker);
-        builder.include(marker.getPosition());
+    // TODO: 17/04/2020 Change to get from trailsactivity 
+    public void addMarkers(Set<LatLng> set, Context context) {
+        for (int i = 0; i < artworks.size(); i++) {
+            Artwork a = artworks.get(i);
+
+            // Check if marker already exists
+            if (set.contains(a.getLatLng())) continue;
+            set.add(a.getLatLng());
+
+            Marker marker = map.addMarker(
+                new MarkerOptions().position(a.getLatLng())
+                    .title(a.getName())
+                    .snippet(a.getCreator())
+                    .icon(bitmapDescriptorFromVector(context, numberMarker(i + 1)))
+            );
+            markers.add(marker);
+            artworkMap.put(marker, a);
+            marker.setVisible(false);
+            builder.include(marker.getPosition());
+        }
     }
 
     // Function to set icon
@@ -135,26 +147,6 @@ public class Trail {
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
         //map.moveCamera(cu);
         map.animateCamera(cu);
-    }
-
-    // TODO: 13/02/2020 Should we remove if unused?
-    @Deprecated
-    // Another zoom in function (not used)
-    public void zoom() {
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-
-        for (Map.Entry element : artworkMap.entrySet()) {
-            Marker key = (Marker) element.getKey();
-            builder.include(key.getPosition());
-        }
-
-        //builder.include(currentPosition.getPosition());
-        LatLngBounds bounds = builder.build();
-        int padding = 100; // Offset from edges of the map in pixels
-        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
-        map.moveCamera(cu);
-
-        //map.animateCamera(cu);
     }
 
     // --- Visibility of trail methods ---
