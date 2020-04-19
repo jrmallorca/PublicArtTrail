@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,12 +31,15 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.material.navigation.NavigationView;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.publicarttrail.googlemapspractice.directionhelpers.LocationService;
 import com.publicarttrail.googlemapspractice.directionhelpers.TaskLoadedCallback;
 import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
@@ -50,8 +54,11 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class TrailsActivity extends AppCompatActivity
         implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener, TaskLoadedCallback {
@@ -77,8 +84,13 @@ public class TrailsActivity extends AppCompatActivity
     private int eventCounter;
     private List<Trail> trails = new ArrayList<>();
     private List<Artwork> artworks = new ArrayList<>();
-    // TODO: 09/02/2020 Possibility to replace this with id from Trail???
-    private Trail trailSelected; // Selecting trails attributes
+
+    private BiMap<Marker, Artwork> markerArtwork = HashBiMap.create(); // Two-way hashtable
+    private List<Marker> markers = new ArrayList<>();
+    // Builds a boundary based on the set of LatLngs provided
+    private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder();
+
+    private Trail trailSelected; // Selecting trails attributes TODO: 09/02/2020 Possibility to replace this with id from Trail???
 
     // -- ACTIVITY RELATED METHODS --
 
@@ -171,19 +183,28 @@ public class TrailsActivity extends AppCompatActivity
         Menu menu = navigationView.getMenu();
 
         for (Artwork a : artworks) {
-            Marker marker = mMap.addMarker(
-                    new MarkerOptions().position(a.getLatLng())
-                            .title(a.getName())
-                            .snippet(a.getCreator())
-                            .icon(bitmapDescriptorFromVector(context, numberMarker(i + 1)))
-            );
+            try {
+                Marker m = mMap.addMarker(
+                        new MarkerOptions().position(a.getLatLng())
+                                .title(a.getName())
+                                .snippet(a.getCreator())
+                                .icon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", "")))
+                );
+                markers.add(m);
+                markerArtwork.put(m, a);
+
+                m.setVisible(false);
+                latLngBuilder.include(m.getPosition());
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         // TODO: 16/04/2020 Turn this into a submenu afterwards perhaps
         for (Trail t : trails) {
             t.setMap(mMap);
             menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
-            t.addMarkers(TrailsActivity.this); // Add marker for each artwork in each trail
+            t.addMarkers(new HashSet<>(), TrailsActivity.this); // Add marker for each artwork in each trail
         }
         menu.add(R.id.nav_trails_group, trails.size() + 1, Menu.NONE, "List View");
 
@@ -351,6 +372,17 @@ public class TrailsActivity extends AppCompatActivity
                     .findFragmentById(R.id.map);
             supportMapFragment.getMapAsync(TrailsActivity.this);
         }
+    }
+
+    // If GlideApp is not working properly, just press Build | Make Project and make sure SampleGlideModule.java is there
+    private Bitmap getIconFromURL(String colour, String character) throws ExecutionException, InterruptedException {
+        String url = "https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_" + colour + character + ".png";
+
+        return GlideApp.with(this)
+                .asBitmap()
+                .load(url)
+                .submit()
+                .get();
     }
 
     //start tracking

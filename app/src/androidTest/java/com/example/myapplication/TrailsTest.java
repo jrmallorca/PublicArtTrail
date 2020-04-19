@@ -1,8 +1,6 @@
 package com.example.myapplication;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 
@@ -42,7 +40,7 @@ public class TrailsTest {
         LatLng waypoint = new LatLng(51.4578, -2.601779);
         waypoints.add(waypoint);
 
-        String url = trail.getUrl(origin, destination, directionMode, waypoints);
+        String url = trail.getURLTrailPath(origin, destination, directionMode, waypoints);
 
         String check = "https://maps.googleapis.com/maps/api/directions/json?origin=51.462773,-2.601686&destination=51.458614,-2.602028&waypoints=51.4578,-2.601779&mode=walking&key=AIzaSyBg2CwABbCb-ql9-_YtXA4mGDDI7X1nuU8";
         assertEquals("Not equal", check, url);
@@ -56,7 +54,7 @@ public class TrailsTest {
         LatLng destination = new LatLng(51.458614, -2.602028);
         String directionMode = "walking";
 
-        String url = trail.getUrl2(origin, destination, directionMode);
+        String url = trail.getURLUserPath(origin, destination, directionMode);
 
         String check = "https://maps.googleapis.com/maps/api/directions/json?origin=51.462773,-2.601686&destination=51.458614,-2.602028&mode=walking&key=AIzaSyBg2CwABbCb-ql9-_YtXA4mGDDI7X1nuU8";
         assertEquals("Not equal", check, url);
