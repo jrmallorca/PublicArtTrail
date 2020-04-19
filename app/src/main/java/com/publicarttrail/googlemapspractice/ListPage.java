@@ -78,14 +78,13 @@ public class ListPage extends AppCompatActivity {
     }
 
     private void getSelectedCategoryData(int categoryID) {
-        //arraylist to hold selected cosmic bodies
-        ArrayList<Artwork> artworks = new ArrayList<>();
         if(categoryID == 0) //All
         {
             adapter = new CustomListAdaptor(getArtworks(trails), ListPage.this);
         }else{
+            //arraylist to hold selected cosmic bodies
             //filter by id
-            artworks.addAll(Objects.requireNonNull(artworkMap.get((itemSelections.get(categoryID)))));
+            ArrayList<Artwork> artworks = new ArrayList<>(Objects.requireNonNull(artworkMap.get((itemSelections.get(categoryID)))));
             //instatiate adapter a
             adapter = new CustomListAdaptor(artworks, ListPage.this);
         }

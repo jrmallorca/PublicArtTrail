@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -51,14 +52,17 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.Objects;
 
 public class TrailsActivity extends AppCompatActivity
         implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener, TaskLoadedCallback {
@@ -74,7 +78,6 @@ public class TrailsActivity extends AppCompatActivity
     private Boolean isCurrentLocSet;
     private Polyline trailPolyline;
     private Polyline locationPolyline;
-    private Boolean askingForDirection = false;
     private Intent intent;
     private int counter = -1;
     private Boolean isPolylineForTrail = true;
@@ -86,7 +89,6 @@ public class TrailsActivity extends AppCompatActivity
     private List<Artwork> artworks = new ArrayList<>();
 
     private BiMap<Marker, Artwork> markerArtwork = HashBiMap.create(); // Two-way hashtable
-    private List<Marker> markers = new ArrayList<>();
     // Builds a boundary based on the set of LatLngs provided
     private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder();
 
@@ -183,33 +185,27 @@ public class TrailsActivity extends AppCompatActivity
         Menu menu = navigationView.getMenu();
 
         for (Artwork a : artworks) {
-            try {
-                Marker m = mMap.addMarker(
-                        new MarkerOptions().position(a.getLatLng())
-                                .title(a.getName())
-                                .snippet(a.getCreator())
-                                .icon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", "")))
-                );
-                markers.add(m);
-                markerArtwork.put(m, a);
+            Marker m = mMap.addMarker(
+                    new MarkerOptions().position(a.getLatLng())
+                            .title(a.getName())
+                            .snippet(a.getCreator())
+                            .icon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", "")))
+            );
+            markerArtwork.put(m, a);
 
-                m.setVisible(false);
-                latLngBuilder.include(m.getPosition());
-            } catch (ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-            }
+            m.setVisible(false);
+            latLngBuilder.include(m.getPosition());
         }
 
         // TODO: 16/04/2020 Turn this into a submenu afterwards perhaps
         for (Trail t : trails) {
             t.setMap(mMap);
             menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
-            t.addMarkers(new HashSet<>(), TrailsActivity.this); // Add marker for each artwork in each trail
         }
         menu.add(R.id.nav_trails_group, trails.size() + 1, Menu.NONE, "List View");
 
         //custom infowindow set up (check newly created class)
-        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, trails);
+        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerArtwork);
 
         //infowindows in this map will use format set in CustomInfoWindowAdapter
         mMap.setInfoWindowAdapter(adapter);
@@ -219,9 +215,9 @@ public class TrailsActivity extends AppCompatActivity
 
         // Show the first trail's markers, set it as actionBar's title and zoom in
         setTitle(trailSelected.getName());
-        trailSelected.artworkMarkersVisibility(true);
+        artworkMarkersVisibility(trailSelected, true);
         mMap.setOnMarkerClickListener(this);
-        trailSelected.showTrail(TrailsActivity.this);
+        trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
     }
 
     // -- BUTTONS --
@@ -230,11 +226,11 @@ public class TrailsActivity extends AppCompatActivity
     // If we return false, no item will be selected even if the action was triggered
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-        if(menuItem.getItemId()!=trails.size()+1) {
+        if(menuItem.getItemId()!=trails.size()+1) { // TODO: 19/04/2020 Perhaps replace with GroupID 
             if (trailSelected != trails.get(menuItem.getItemId() - 1)) {
                 // Hide markers from previous trail
                 isPolylineForTrail = true;
-                trailSelected.artworkMarkersVisibility(false);
+                artworkMarkersVisibility(trailSelected, false);
                 if (isCurrentLocSet) {
                     currentLocationMarker.setVisible(false);
                     locationPolyline.setVisible(false);
@@ -242,9 +238,9 @@ public class TrailsActivity extends AppCompatActivity
                 //isPolylineForTrail = true;
                 if (trailPolyline != null) trailPolyline.setVisible(false);
                 trailSelected = trails.get(menuItem.getItemId() - 1);
-                trailSelected.artworkMarkersVisibility(true);
+                artworkMarkersVisibility(trailSelected, true);
                 trailSelected.zoomIn();
-                trailSelected.showTrail(TrailsActivity.this);
+                trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
                 //  isPolylineForTrail = false;
             }
 
@@ -275,9 +271,9 @@ public class TrailsActivity extends AppCompatActivity
     // zoom in features.
     private void showDisableCurrentLocation() {
         //hide any open infowindows
-        for (Map.Entry element : trailSelected.getArtworkMap().entrySet()) {
-            Marker key = (Marker) element.getKey();
-            key.hideInfoWindow();
+        for (Artwork a : trailSelected.getArtworks()) {
+            Marker key = markerArtwork.inverse().get(a);
+            Objects.requireNonNull(key).hideInfoWindow();
         }
 
         if (!isCurrentLocSet) {
@@ -300,7 +296,7 @@ public class TrailsActivity extends AppCompatActivity
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        if (trailSelected.getArtworkMap().containsKey(marker)) {
+        if (markerArtwork.containsKey(marker)) {
             //moves map to show infowindow (don't know how it works->copy-paste)
             int zoom = (int)mMap.getCameraPosition().zoom;
             CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new
@@ -321,10 +317,7 @@ public class TrailsActivity extends AppCompatActivity
         mMap.setOnInfoWindowClickListener(marker -> {
             // Cache the artwork
             EventBus.getDefault()
-                    .postSticky(new ArtworkAcquiredEvent(Collections.singletonList(trailSelected
-                                    .getArtworkMap()
-                                    .get(marker)))
-                    );
+                    .postSticky(new ArtworkAcquiredEvent(Collections.singletonList(markerArtwork.get(marker))));
 
             Intent info = new Intent(TrailsActivity.this, InfoPage.class);
             startActivity(info);
@@ -374,15 +367,39 @@ public class TrailsActivity extends AppCompatActivity
         }
     }
 
-    // If GlideApp is not working properly, just press Build | Make Project and make sure SampleGlideModule.java is there
-    private Bitmap getIconFromURL(String colour, String character) throws ExecutionException, InterruptedException {
-        String url = "https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_" + colour + character + ".png";
+    // Numbers can go from 1-100 from the prepared things in website
+    private Bitmap getIconFromURL(String colour, String character) {
+        String strURL = "https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_" + colour + character + ".png";
 
-        return GlideApp.with(this)
-                .asBitmap()
-                .load(url)
-                .submit()
-                .get();
+        try {
+            URL url = new URL(strURL);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            return BitmapFactory.decodeStream(input);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Adjusts visibility of artwork markers
+    public void artworkMarkersVisibility(Trail t, Boolean bool) {
+        List<Artwork> as = t.getArtworks();
+
+        for (int i = 0; i < as.size(); i++) {
+            Marker m = markerArtwork.inverse().get(as.get(i));
+            Objects.requireNonNull(m).setIcon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", Integer.toString(i))));
+            Objects.requireNonNull(m).setVisible(bool);
+        }
+    }
+
+    public void artworkMarkersVisibility(Boolean bool) {
+        for (Marker m : markerArtwork.keySet()) {
+            m.setIcon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", "")));
+            Objects.requireNonNull(m).setVisible(bool);
+        }
     }
 
     //start tracking
@@ -412,7 +429,6 @@ public class TrailsActivity extends AppCompatActivity
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         currentLocationMarker = mMap.addMarker(markerOptions);
         currentLocationMarker.setVisible(true);
-        askingForDirection = true;
     }
 
     // Result on whether user accepted permission or not
@@ -499,13 +515,13 @@ public class TrailsActivity extends AppCompatActivity
                     // locationPolyline.setVisible(false);
                     //locationPolyline.remove();
                     setCurrentLocationMarker(latLng);
-                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition(), markerArtwork.inverse());
 
                 }
                 else{
                     setCurrentLocationMarker(latLng);
-                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-                    trailSelected.zoomFit(currentLocationMarker);
+                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition(), markerArtwork.inverse());
+                    trailSelected.zoomFit(currentLocationMarker, markerArtwork.inverse());
 
                 }
             }
