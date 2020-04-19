@@ -20,9 +20,9 @@ import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 // POJO converted from JSON
@@ -33,9 +33,6 @@ public class Trail {
     private List<Artwork> artworks;
 
     // More complex attributes for methods
-    // Hashmap to store markers of each artwork
-    private Map<Marker, Artwork> artworkMap = new HashMap<>();
-    private List<Marker> markers = new ArrayList<>();
     private GoogleMap map;
     private LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
@@ -51,11 +48,6 @@ public class Trail {
         return artworks;
     }
 
-    // TODO: 17/04/2020 Move this stuff to TrailsActivity. Look at getIconFromURL() 
-    public Map<Marker, Artwork> getArtworkMap() {
-        return artworkMap;
-    }
-
     public void setMap(GoogleMap map) {
         this.map = map;
     }
@@ -64,41 +56,9 @@ public class Trail {
 
     public void setName(String name) { this.name = name; }
 
-    public void setArtworks(List<Artwork> artWorks) { this.artworks = artWorks; }
+    public void setArtworks(List<Artwork> artworks) { this.artworks = artworks; }
 
     // --- Marker methods ---
-
-    // TODO: 17/04/2020 Change to get from trailsactivity 
-    public void addMarkers(Set<LatLng> set, Context context) {
-        for (int i = 0; i < artworks.size(); i++) {
-            Artwork a = artworks.get(i);
-
-            // Check if marker already exists
-            if (set.contains(a.getLatLng())) continue;
-            set.add(a.getLatLng());
-
-            Marker marker = map.addMarker(
-                new MarkerOptions().position(a.getLatLng())
-                    .title(a.getName())
-                    .snippet(a.getCreator())
-                    .icon(bitmapDescriptorFromVector(context, numberMarker(i + 1)))
-            );
-            markers.add(marker);
-            artworkMap.put(marker, a);
-            marker.setVisible(false);
-            builder.include(marker.getPosition());
-        }
-    }
-
-    // Function to set icon
-    private BitmapDescriptor bitmapDescriptorFromVector(Context context, int vectorId) {
-        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorId);
-        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight());
-        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        vectorDrawable.draw(canvas);
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
-    }
 
     // TODO: 10/02/2020 Hmmm... Dunno how to improve but there might be a better way??? Either replace this or reconsider ordering in DB
     // Return marker depending on position of marker in the list
@@ -115,14 +75,6 @@ public class Trail {
         else return R.drawable.number_10;
     }
 
-    // Adjusts visibility of artwork markers
-    public void artworkMarkersVisibility(Boolean bool) {
-        for (Map.Entry element : artworkMap.entrySet()) {
-            Marker key = (Marker) element.getKey();
-            key.setVisible(bool);
-        }
-    }
-
     // --- Zoom methods ---
 
     // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
@@ -134,12 +86,12 @@ public class Trail {
     }
 
     // Zoom to fit in all markers including current position
-    public void zoomFit(Marker currentPosition) {
+    public void zoomFit(Marker currentPosition, Map<Artwork, Marker> artworkMarker) {
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
-        for (Map.Entry element : artworkMap.entrySet()) {
-            Marker key = (Marker) element.getKey();
-            builder.include(key.getPosition());
+        for (Artwork a : artworks) {
+            Marker key = artworkMarker.get(a);
+            builder.include(Objects.requireNonNull(key).getPosition());
         }
 
         builder.include(currentPosition.getPosition());
@@ -203,31 +155,31 @@ public class Trail {
     }
 
     // Create array for waypoints
-    public List<LatLng> getWaypoints(List<Marker> markers) {
+    private List<LatLng> getWaypoints(Map<Artwork, Marker> artworkMarker) {
         List<LatLng> wayPoints = new ArrayList<>();
-        for (int i = 1; i < markers.size() - 1; i++) {
-            wayPoints.add(markers.get(i).getPosition());
+        for (int i = 1; i < artworks.size() - 1; i++) {
+            wayPoints.add(Objects.requireNonNull(artworkMarker.get(artworks.get(i))).getPosition());
         }
         return wayPoints;
     }
 
     // Request
-    public void showTrail(Context context) {
+    public void showTrail(Context context, Map<Artwork, Marker> artworkMarker) {
         new FetchURL(context)
-                .execute(getURLTrailPath(markers.get(0).getPosition(),
-                                markers.get(markers.size()-1).getPosition(),
+                .execute(getURLTrailPath(Objects.requireNonNull(artworkMarker.get(artworks.get(0))).getPosition(),
+                                Objects.requireNonNull(artworkMarker.get(artworks.get(artworks.size() - 1))).getPosition(),
                    "walking",
-                                getWaypoints(markers)),
+                                getWaypoints(artworkMarker)),
                          "walking");
     }
 
     // --- Location methods ---
 
     // Get direction from current location to trail (still related to trails^^)
-    public void getDirection(Context context, LatLng currentLocation) {
+    public void getDirection(Context context, LatLng currentLocation, Map<Artwork, Marker> artworkMarker) {
         new FetchURL(context)
                 .execute(getURLUserPath(currentLocation,
-                                 markers.get(0).getPosition(),
+                                 Objects.requireNonNull(artworkMarker.get(artworks.get(0))).getPosition(),
                     "driving"),
                          "driving");
     }

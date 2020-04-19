@@ -1,5 +1,6 @@
 package com.publicarttrail.googlemapspractice.networking;
 
+import hu.akarnokd.rxjava3.retrofit.RxJava3CallAdapterFactory;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -9,6 +10,7 @@ public class RetrofitService {
     private static Retrofit retrofit = new Retrofit.Builder()
             .baseUrl("https://public-art-trail.herokuapp.com")  // Base URL
             .addConverterFactory(GsonConverterFactory.create()) // Converting JSON objects to POJO
+            .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
             .build();
 
     // Private constructor so nothing uses it but the method below
