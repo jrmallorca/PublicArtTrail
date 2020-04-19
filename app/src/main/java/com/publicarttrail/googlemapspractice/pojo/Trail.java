@@ -51,6 +51,7 @@ public class Trail {
         return artworks;
     }
 
+    // TODO: 17/04/2020 Move this stuff to TrailsActivity. Look at getIconFromURL() 
     public Map<Marker, Artwork> getArtworkMap() {
         return artworkMap;
     }
@@ -152,7 +153,7 @@ public class Trail {
     // --- Visibility of trail methods ---
 
     // Creating URL for JSON request for trail
-    public String getUrl(LatLng origin, LatLng dest, String directionMode, List<LatLng> waypoints) {
+    public String getURLTrailPath(LatLng origin, LatLng dest, String directionMode, List<LatLng> waypoints) {
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
 
@@ -181,7 +182,7 @@ public class Trail {
     }
 
     // Request for current location to trail
-    public String getUrl2(LatLng origin, LatLng dest, String directionMode) {
+    public String getURLUserPath(LatLng origin, LatLng dest, String directionMode) {
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
 
@@ -213,7 +214,7 @@ public class Trail {
     // Request
     public void showTrail(Context context) {
         new FetchURL(context)
-                .execute(getUrl(markers.get(0).getPosition(),
+                .execute(getURLTrailPath(markers.get(0).getPosition(),
                                 markers.get(markers.size()-1).getPosition(),
                    "walking",
                                 getWaypoints(markers)),
@@ -225,7 +226,7 @@ public class Trail {
     // Get direction from current location to trail (still related to trails^^)
     public void getDirection(Context context, LatLng currentLocation) {
         new FetchURL(context)
-                .execute(getUrl2(currentLocation,
+                .execute(getURLUserPath(currentLocation,
                                  markers.get(0).getPosition(),
                     "driving"),
                          "driving");
