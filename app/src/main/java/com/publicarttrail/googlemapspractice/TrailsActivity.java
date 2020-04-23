@@ -7,8 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -47,21 +47,18 @@ import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
 import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
+import com.publicarttrail.googlemapspractice.pojo.TrailArtwork;
+import com.squareup.picasso.Picasso;
+import com.squareup.picasso.Target;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class TrailsActivity extends AppCompatActivity
@@ -91,6 +88,7 @@ public class TrailsActivity extends AppCompatActivity
     private BiMap<Marker, Artwork> markerArtwork = HashBiMap.create(); // Two-way hashtable
     // Builds a boundary based on the set of LatLngs provided
     private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder();
+    private List<Target> targets = new ArrayList<>();
 
     private Trail trailSelected; // Selecting trails attributes TODO: 09/02/2020 Possibility to replace this with id from Trail???
 
@@ -182,27 +180,41 @@ public class TrailsActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        Menu menu = navigationView.getMenu();
+        Menu trailsMenu = navigationView.getMenu().getItem(1).getSubMenu();
 
-        for (Artwork a : artworks) {
-            Marker m = mMap.addMarker(
-                    new MarkerOptions().position(a.getLatLng())
-                            .title(a.getName())
-                            .snippet(a.getCreator())
-                            .icon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", "")))
-            );
-            markerArtwork.put(m, a);
+        for (int i = 0; i < artworks.size(); i++) {
+            int finalI = i;
+            targets.add(new Target() {
+                @Override
+                public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                    Marker m = mMap.addMarker(new MarkerOptions()
+                                    .position(artworks.get(finalI).getLatLng())
+                                    .title(artworks.get(finalI).getName())
+                                    .snippet(artworks.get(finalI).getCreator())
+                                    .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
 
-            m.setVisible(false);
-            latLngBuilder.include(m.getPosition());
+                    markerArtwork.put(m, artworks.get(finalI));
+                    latLngBuilder.include(m.getPosition());
+                }
+
+                @Override
+                public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+                }
+
+                @Override
+                public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                }
+            });
+
+            Picasso.get().load(getIconURL("red", "")).into(targets.get(i));
         }
 
-        // TODO: 16/04/2020 Turn this into a submenu afterwards perhaps
         for (Trail t : trails) {
             t.setMap(mMap);
-            menu.add(R.id.nav_trails_group, (int) t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
+            trailsMenu.add(Menu.NONE, (int) t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
         }
-        menu.add(R.id.nav_trails_group, trails.size() + 1, Menu.NONE, "List View");
 
         //custom infowindow set up (check newly created class)
         CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerArtwork);
@@ -215,7 +227,7 @@ public class TrailsActivity extends AppCompatActivity
 
         // Show the first trail's markers, set it as actionBar's title and zoom in
         setTitle(trailSelected.getName());
-        artworkMarkersVisibility(trailSelected, true);
+        showMarkers(trailSelected, true);
         mMap.setOnMarkerClickListener(this);
         trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
     }
@@ -226,30 +238,52 @@ public class TrailsActivity extends AppCompatActivity
     // If we return false, no item will be selected even if the action was triggered
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-        if(menuItem.getItemId()!=trails.size()+1) { // TODO: 19/04/2020 Perhaps replace with GroupID 
-            if (trailSelected != trails.get(menuItem.getItemId() - 1)) {
-                // Hide markers from previous trail
-                isPolylineForTrail = true;
-                artworkMarkersVisibility(trailSelected, false);
-                if (isCurrentLocSet) {
+        switch (menuItem.getItemId()) {
+            case R.id.nav_home: // View all artworks on map
+                // Hide current trail's markers and polyline, and location
+                showMarkers(trailSelected, false);
+                if (isCurrentLocSet) { // Disable location when selecting new trail
                     currentLocationMarker.setVisible(false);
                     locationPolyline.setVisible(false);
                 }
-                //isPolylineForTrail = true;
                 if (trailPolyline != null) trailPolyline.setVisible(false);
+
+                // Show selected trail's markers and polyline
                 trailSelected = trails.get(menuItem.getItemId() - 1);
-                artworkMarkersVisibility(trailSelected, true);
+                showMarkers(trailSelected, true);
                 trailSelected.zoomIn();
                 trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
-                //  isPolylineForTrail = false;
-            }
+                break;
 
-            setTitle(trailSelected.getName());
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            Intent info = new Intent(TrailsActivity.this, ListPage.class);
-            startActivity(info);
+            case R.id.nav_artworks: // View all artworks via list
+                Intent info = new Intent(TrailsActivity.this, ListPage.class);
+                startActivity(info);
+                break;
+
+            default: // Switch trails
+                if (trailSelected != trails.get(menuItem.getItemId() - 1)) {
+                    // Hide current trail's markers and polyline, and location
+                    isPolylineForTrail = true;
+                    showMarkers(trailSelected, false);
+                    if (isCurrentLocSet) { // Disable location when selecting new trail
+                        currentLocationMarker.setVisible(false);
+                        locationPolyline.setVisible(false);
+                    }
+                    if (trailPolyline != null) trailPolyline.setVisible(false);
+
+                    // Show selected trail's markers and polyline
+                    trailSelected = trails.get(menuItem.getItemId() - 1);
+                    showMarkers(trailSelected, true);
+                    trailSelected.zoomIn();
+                    trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
+
+                    setTitle(trailSelected.getName());
+                }
+
+                drawer.closeDrawer(GravityCompat.START);
+                break;
         }
+
         return true;
     }
 
@@ -271,8 +305,8 @@ public class TrailsActivity extends AppCompatActivity
     // zoom in features.
     private void showDisableCurrentLocation() {
         //hide any open infowindows
-        for (Artwork a : trailSelected.getArtworks()) {
-            Marker key = markerArtwork.inverse().get(a);
+        for (TrailArtwork a : trailSelected.getTrailArtworks()) {
+            Marker key = markerArtwork.inverse().get(a.getArtwork());
             Objects.requireNonNull(key).hideInfoWindow();
         }
 
@@ -335,7 +369,7 @@ public class TrailsActivity extends AppCompatActivity
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(TrailAcquiredEvent event) {
-        EventBus.getDefault().removeStickyEvent(event);
+//        EventBus.getDefault().removeStickyEvent(event);
         trails = event.trails;
         trailSelected = trails.get(0);
 
@@ -353,7 +387,7 @@ public class TrailsActivity extends AppCompatActivity
     // Called when an ArtworkAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(ArtworkAcquiredEvent event) {
-        EventBus.getDefault().removeStickyEvent(event);
+//        EventBus.getDefault().removeStickyEvent(event);
         artworks = event.artworks;
 
         // Setting up the map
@@ -368,37 +402,67 @@ public class TrailsActivity extends AppCompatActivity
     }
 
     // Numbers can go from 1-100 from the prepared things in website
-    private Bitmap getIconFromURL(String colour, String character) {
-        String strURL = "https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_" + colour + character + ".png";
-
-        try {
-            URL url = new URL(strURL);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            return BitmapFactory.decodeStream(input);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+    private String getIconURL(String colour, String character) {
+        return "https://raw.githubusercontent.com/Concept211/Google-Maps-Markers/master/images/marker_" + colour + character + ".png";
     }
 
     // Adjusts visibility of artwork markers
-    public void artworkMarkersVisibility(Trail t, Boolean bool) {
-        List<Artwork> as = t.getArtworks();
+    public void showMarkers(Trail t, Boolean show) {
+        targets.clear();
 
-        for (int i = 0; i < as.size(); i++) {
-            Marker m = markerArtwork.inverse().get(as.get(i));
-            Objects.requireNonNull(m).setIcon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", Integer.toString(i))));
-            Objects.requireNonNull(m).setVisible(bool);
+        for (int i = 0; i < t.getTrailArtworks().size(); i++) {
+            Marker m = markerArtwork.inverse().get(t.getTrailArtworks().get(i).getArtwork());
+
+            if (show) {
+                targets.add(new Target() {
+                    @Override
+                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                        Objects.requireNonNull(m).setIcon(BitmapDescriptorFactory.fromBitmap(bitmap));
+                        Objects.requireNonNull(m).setVisible(true);
+                    }
+
+                    @Override
+                    public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+                    }
+
+                    @Override
+                    public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                    }
+                });
+
+                Picasso.get().load(getIconURL("red", Integer.toString(t.getTrailArtworks().get(i).getArtworkRank()))).into(targets.get(i));
+            } else Objects.requireNonNull(m).setVisible(false);
         }
     }
 
-    public void artworkMarkersVisibility(Boolean bool) {
+    public void showMarkers(Boolean show) {
+        targets.clear();
+        int i = 0;
         for (Marker m : markerArtwork.keySet()) {
-            m.setIcon(BitmapDescriptorFactory.fromBitmap(getIconFromURL("red", "")));
-            Objects.requireNonNull(m).setVisible(bool);
+            if (show) {
+                targets.add(new Target() {
+                    @Override
+                    public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                        Objects.requireNonNull(m).setIcon(BitmapDescriptorFactory.fromBitmap(bitmap));
+                        Objects.requireNonNull(m).setVisible(true);
+                    }
+
+                    @Override
+                    public void onBitmapFailed(Exception e, Drawable errorDrawable) {
+
+                    }
+
+                    @Override
+                    public void onPrepareLoad(Drawable placeHolderDrawable) {
+
+                    }
+                });
+
+                Picasso.get().load(getIconURL("red", "")).into(targets.get(i));
+                i++;
+            } else Objects.requireNonNull(m).setVisible(false);
         }
     }
 

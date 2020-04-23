@@ -1,21 +1,13 @@
 package com.publicarttrail.googlemapspractice.pojo;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-
-import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 
@@ -23,14 +15,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 // POJO converted from JSON
 public class Trail {
     // Base attributes
     private long id;
     private String name;
-    private List<Artwork> artworks;
+    private List<TrailArtwork> trailArtworks;
 
     // More complex attributes for methods
     private GoogleMap map;
@@ -44,7 +35,15 @@ public class Trail {
         return name;
     }
 
+    public List<TrailArtwork> getTrailArtworks() {
+        return trailArtworks;
+    }
+
     public List<Artwork> getArtworks() {
+        List<Artwork> artworks = new ArrayList<>();
+        for (TrailArtwork ta : trailArtworks) {
+            artworks.add(ta.getArtwork());
+        }
         return artworks;
     }
 
@@ -56,7 +55,15 @@ public class Trail {
 
     public void setName(String name) { this.name = name; }
 
-    public void setArtworks(List<Artwork> artworks) { this.artworks = artworks; }
+    public void setTrailArtworks(List<TrailArtwork> trailArtworks) { this.trailArtworks = trailArtworks; }
+
+    public Trail(long id,
+                 String name,
+                 List<TrailArtwork> trailArtworks) {
+        this.id = id;
+        this.name = name;
+        this.trailArtworks = trailArtworks;
+    }
 
     // --- Marker methods ---
 
@@ -89,8 +96,8 @@ public class Trail {
     public void zoomFit(Marker currentPosition, Map<Artwork, Marker> artworkMarker) {
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
-        for (Artwork a : artworks) {
-            Marker key = artworkMarker.get(a);
+        for (TrailArtwork a : trailArtworks) {
+            Marker key = artworkMarker.get(a.getArtwork());
             builder.include(Objects.requireNonNull(key).getPosition());
         }
 
@@ -157,8 +164,8 @@ public class Trail {
     // Create array for waypoints
     private List<LatLng> getWaypoints(Map<Artwork, Marker> artworkMarker) {
         List<LatLng> wayPoints = new ArrayList<>();
-        for (int i = 1; i < artworks.size() - 1; i++) {
-            wayPoints.add(Objects.requireNonNull(artworkMarker.get(artworks.get(i))).getPosition());
+        for (int i = 1; i < trailArtworks.size() - 1; i++) {
+            wayPoints.add(Objects.requireNonNull(artworkMarker.get(trailArtworks.get(i).getArtwork())).getPosition());
         }
         return wayPoints;
     }
@@ -166,8 +173,8 @@ public class Trail {
     // Request
     public void showTrail(Context context, Map<Artwork, Marker> artworkMarker) {
         new FetchURL(context)
-                .execute(getURLTrailPath(Objects.requireNonNull(artworkMarker.get(artworks.get(0))).getPosition(),
-                                Objects.requireNonNull(artworkMarker.get(artworks.get(artworks.size() - 1))).getPosition(),
+                .execute(getURLTrailPath(Objects.requireNonNull(artworkMarker.get(trailArtworks.get(0).getArtwork())).getPosition(),
+                                Objects.requireNonNull(artworkMarker.get(trailArtworks.get(trailArtworks.size() - 1).getArtwork())).getPosition(),
                    "walking",
                                 getWaypoints(artworkMarker)),
                          "walking");
@@ -179,7 +186,7 @@ public class Trail {
     public void getDirection(Context context, LatLng currentLocation, Map<Artwork, Marker> artworkMarker) {
         new FetchURL(context)
                 .execute(getURLUserPath(currentLocation,
-                                 Objects.requireNonNull(artworkMarker.get(artworks.get(0))).getPosition(),
+                                 Objects.requireNonNull(artworkMarker.get(trailArtworks.get(0).getArtwork())).getPosition(),
                     "driving"),
                          "driving");
     }

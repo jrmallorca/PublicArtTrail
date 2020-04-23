@@ -27,7 +27,7 @@ public class TrailsTest {
         trail = new Trail();
         trail.setId(1);
         trail.setName("RFG");
-        trail.setArtworks(artworks);
+        trail.setTrailArtworks(artworks);
 
     }
 
