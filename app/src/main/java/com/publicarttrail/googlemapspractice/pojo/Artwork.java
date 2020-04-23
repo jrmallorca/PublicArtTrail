@@ -23,8 +23,13 @@ public class Artwork {
     private LatLng latLng;
     private Bitmap bitmap;
 
-    public Artwork(long id, String name, String creator, String description, Double latitude,
-                        Double longitude, String image) {
+    public Artwork(long id,
+                   String name,
+                   String creator,
+                   String description,
+                   double latitude,
+                   double longitude,
+                   String image) {
         this.id = id;
         this.name = name;
         this.creator = creator;

@@ -8,9 +8,7 @@ import android.widget.TextView;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.Marker;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
-import com.publicarttrail.googlemapspractice.pojo.Trail;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
