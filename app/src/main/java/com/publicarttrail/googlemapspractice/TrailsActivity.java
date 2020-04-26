@@ -90,7 +90,7 @@ public class TrailsActivity extends AppCompatActivity
     private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder(); // Builds a boundary based on the set of LatLngs provided
     private List<Target> targets = new ArrayList<>(); // Assigns marker icon from Picasso
 
-    private Trail trailSelected; // Selecting trails attributes TODO: 09/02/2020 Possibility to replace this with id from Trail???
+    private Trail currentTrail;
 
     // -- ACTIVITY RELATED METHODS --
 
@@ -244,9 +244,9 @@ public class TrailsActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.nav_home: // View all artworks on map
-                if (trailSelected != null) {
+                if (currentTrail != null) {
                     // Hide current trail's markers and polyline, and location
-                    showMarkers(trailSelected, false);
+                    showMarkers(currentTrail, false);
                     if (isCurrentLocSet) {
                         currentLocationMarker.setVisible(false);
                         locationPolyline.setVisible(false);
@@ -254,7 +254,7 @@ public class TrailsActivity extends AppCompatActivity
                     if (trailPolyline != null) trailPolyline.setVisible(false);
 
                     // Show all artwork markers
-                    trailSelected = null;
+                    currentTrail = null;
                     showMarkers(true);
                     zoomHome();
                 }
@@ -266,7 +266,7 @@ public class TrailsActivity extends AppCompatActivity
                 break;
 
             default: // Switch trails
-                if (!Objects.equals(trailSelected, trails.get(menuItem.getItemId() - 1))) {
+                if (!Objects.equals(currentTrail, trails.get(menuItem.getItemId() - 1))) {
                     // Hide current trail's markers and polyline, and location
                     isPolylineForTrail = true;
 
@@ -278,12 +278,12 @@ public class TrailsActivity extends AppCompatActivity
                     if (trailPolyline != null) trailPolyline.setVisible(false);
 
                     // Show selected trail's markers and polyline
-                    trailSelected = trails.get(menuItem.getItemId() - 1);
-                    showMarkers(trailSelected, true);
-                    trailSelected.zoomIn();
-                    trailSelected.showTrail(TrailsActivity.this);
+                    currentTrail = trails.get(menuItem.getItemId() - 1);
+                    showMarkers(currentTrail, true);
+                    currentTrail.zoomIn();
+                    currentTrail.showTrail(TrailsActivity.this);
 
-                    setTitle(trailSelected.getName());
+                    setTitle(currentTrail.getName());
                 }
                 break;
         }
@@ -310,7 +310,7 @@ public class TrailsActivity extends AppCompatActivity
     // zoom in features.
     private void showDisableCurrentLocation() {
         //hide any open infowindows
-        for (TrailArtwork ta : trailSelected.getTrailArtworks()) {
+        for (TrailArtwork ta : currentTrail.getTrailArtworks()) {
             Marker key = markerArtwork.inverse().get(ta.getArtwork());
             Objects.requireNonNull(key).hideInfoWindow();
         }
@@ -329,7 +329,7 @@ public class TrailsActivity extends AppCompatActivity
             locationPolyline.remove();
             locationPolyline = null;
             // locationPolyline = null;
-            trailSelected.zoomIn();
+            currentTrail.zoomIn();
         }
     }
 
@@ -593,13 +593,13 @@ public class TrailsActivity extends AppCompatActivity
                     // locationPolyline.setVisible(false);
                     //locationPolyline.remove();
                     setCurrentLocationMarker(latLng);
-                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                    currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
 
                 }
                 else{
                     setCurrentLocationMarker(latLng);
-                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-                    trailSelected.zoomFit(currentLocationMarker);
+                    currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                    currentTrail.zoomFit(currentLocationMarker);
                 }
             }
         }
