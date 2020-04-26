@@ -26,7 +26,6 @@ public class Trail {
     // More complex attributes for methods
     private GoogleMap map;
     private LatLngBounds.Builder builder;
-    private boolean LAT_LNG_BUILT = false;
 
     private Hashtable<Integer, Artwork> rankArtwork;
 
@@ -92,14 +91,14 @@ public class Trail {
     }
 
     private void initLatLngBuilder() {
-        if (!LAT_LNG_BUILT) {
+        if (builder == null) {
             builder = new LatLngBounds.Builder();
-            for (TrailArtwork ta : trailArtworks) builder.include(ta.getArtwork().getLatLng());
-            LAT_LNG_BUILT = true;
+            for (TrailArtwork ta : trailArtworks)
+                builder.include(ta.getArtwork().getLatLng());
         }
     }
 
-    // TODO: 10/02/2020 Hmmm... Dunno how to improve but there might be a better way??? Either replace this or reconsider ordering in DB
+    // TODO: 10/02/2020 Remove
     // Return marker depending on position of marker in the list
     public int numberMarker(int i) {
         if (i==1) return R.drawable.number_1;
@@ -118,7 +117,7 @@ public class Trail {
 
     // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
     public void zoomIn() {
-        if (!LAT_LNG_BUILT) initLatLngBuilder();
+        if (builder == null) initLatLngBuilder();
 
         int padding = 70; // Offset from edges of the map in pixels
         LatLngBounds bounds = builder.build();
@@ -128,7 +127,7 @@ public class Trail {
 
     // Zoom to fit in all markers including current position
     public void zoomFit(Marker currentPosition) {
-        if (!LAT_LNG_BUILT) initLatLngBuilder();
+        if (builder == null) initLatLngBuilder();
 
         LatLngBounds.Builder builder = this.builder;
         builder.include(currentPosition.getPosition());
