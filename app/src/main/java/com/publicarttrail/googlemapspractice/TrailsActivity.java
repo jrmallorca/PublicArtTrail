@@ -117,10 +117,8 @@ public class TrailsActivity extends AppCompatActivity
         toggle.syncState();
 
         // This accounts for rotation, opening app again, etc.
-        if (savedInstanceState == null) {
-            // Set first trail (Royal Fort Gardens) as selected item
-            navigationView.setCheckedItem(0);
-        }
+        if (savedInstanceState == null)
+            navigationView.setCheckedItem(0); // Set first trail
 
         // Setting up location
         isCurrentLocSet = false;
@@ -184,22 +182,26 @@ public class TrailsActivity extends AppCompatActivity
             targets.add(new Target() {
                 @Override
                 public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
+                    Artwork a = artworks.get(finalI);
+
                     Marker m = mMap.addMarker(new MarkerOptions()
-                                    .position(artworks.get(finalI).getLatLng())
-                                    .title(artworks.get(finalI).getName())
-                                    .snippet(artworks.get(finalI).getCreator())
+                                    .position(a.getLatLng())
+                                    .title(a.getName())
+                                    .snippet(a.getCreator())
                                     .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
 
-                    markerArtwork.put(m, artworks.get(finalI));
+                    markerArtwork.put(m, a);
                     latLngBuilder.include(m.getPosition());
 
+                    // Once all icons are set...
                     if (markerArtwork.size() == artworks.size()) {
                         // Attribute that knows dimensions of screen (Used so global map won't appear at beginning)
-                        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> trailSelected.zoomIn());
+                        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> zoomHome());
 
+                        // Set map, add menu item for each trail
                         for (Trail t : trails) {
                             t.setMap(mMap);
-                            trailsMenu.add(Menu.NONE, t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
+                            trailsMenu.add(Menu.NONE, t.getId(), Menu.NONE, t.getName());
                         }
 
                         //custom infowindow set up (check newly created class)
@@ -211,10 +213,10 @@ public class TrailsActivity extends AppCompatActivity
                         //set infowindow clicklistener
                         infoWindowListener();
 
-                        // Show the first trail's markers, set it as actionBar's title and zoom in
-                        setTitle(trailSelected.getName());
-                        showMarkers(trailSelected, true);
-                        trailSelected.showTrail(TrailsActivity.this);
+                        // Show all markers
+                        setTitle(R.string.nav_home);
+                        latLngBuilder.build();
+                        showMarkers(true);
                     }
                 }
 
@@ -242,19 +244,20 @@ public class TrailsActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.nav_home: // View all artworks on map
-                // Hide current trail's markers and polyline, and location
-                showMarkers(trailSelected, false);
-                if (isCurrentLocSet) { // Disable location when selecting new trail
-                    currentLocationMarker.setVisible(false);
-                    locationPolyline.setVisible(false);
-                }
-                if (trailPolyline != null) trailPolyline.setVisible(false);
+                if (trailSelected != null) {
+                    // Hide current trail's markers and polyline, and location
+                    showMarkers(trailSelected, false);
+                    if (isCurrentLocSet) {
+                        currentLocationMarker.setVisible(false);
+                        locationPolyline.setVisible(false);
+                    }
+                    if (trailPolyline != null) trailPolyline.setVisible(false);
 
-                // Show selected trail's markers and polyline
-                trailSelected = trails.get(menuItem.getItemId() - 1);
-                showMarkers(trailSelected, true);
-                trailSelected.zoomIn();
-                trailSelected.showTrail(TrailsActivity.this);
+                    // Show all artwork markers
+                    trailSelected = null;
+                    showMarkers(true);
+                    zoomHome();
+                }
                 break;
 
             case R.id.nav_artworks: // View all artworks via list
@@ -263,10 +266,11 @@ public class TrailsActivity extends AppCompatActivity
                 break;
 
             default: // Switch trails
-                if (trailSelected != trails.get(menuItem.getItemId() - 1)) {
+                if (!Objects.equals(trailSelected, trails.get(menuItem.getItemId() - 1))) {
                     // Hide current trail's markers and polyline, and location
                     isPolylineForTrail = true;
-                    showMarkers(trailSelected, false);
+
+                    showMarkers(false);
                     if (isCurrentLocSet) { // Disable location when selecting new trail
                         currentLocationMarker.setVisible(false);
                         locationPolyline.setVisible(false);
@@ -281,11 +285,10 @@ public class TrailsActivity extends AppCompatActivity
 
                     setTitle(trailSelected.getName());
                 }
-
-                drawer.closeDrawer(GravityCompat.START);
                 break;
         }
 
+        drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
@@ -368,12 +371,19 @@ public class TrailsActivity extends AppCompatActivity
         currentLocationButton.setOnClickListener(v -> showDisableCurrentLocation());
     }
 
+    public void zoomHome() {
+        int padding = 70; // Offset from edges of the map in pixels
+        LatLngBounds bounds = latLngBuilder.build();
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+        mMap.moveCamera(cu);
+    }
+
     // Called when a TrailAcquiredEvent has been posted
+    // TODO: 26/04/2020 Properly set up removing sticky events
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(TrailAcquiredEvent event) {
 //      EventBus.getDefault().removeStickyEvent(event);
         trails = event.trails;
-        trailSelected = trails.get(0);
 
         // Setting up the map
         // Must be called here so that we can guarantee trails isn't null

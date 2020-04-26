@@ -6,16 +6,16 @@
     <!-- Options for trails -->
     <item
         android:id="@+id/nav_home"
-        android:title="Home" />
+        android:title="@string/nav_home" />
     <item
         android:id="@+id/nav_trails"
-        android:title="Trails">
+        android:title="@string/nav_trails">
         <menu>
 
         </menu>
     </item>
     <item
         android:id="@+id/nav_artworks"
-        android:title="Artworks" />
+        android:title="@string/nav_artworks" />
 
 </menu>
