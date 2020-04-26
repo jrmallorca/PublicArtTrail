@@ -58,6 +58,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
 
@@ -86,9 +87,8 @@ public class TrailsActivity extends AppCompatActivity
     private List<Artwork> artworks = new ArrayList<>();
 
     private BiMap<Marker, Artwork> markerArtwork = HashBiMap.create(); // Two-way hashtable
-    // Builds a boundary based on the set of LatLngs provided
-    private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder();
-    private List<Target> targets = new ArrayList<>();
+    private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder(); // Builds a boundary based on the set of LatLngs provided
+    private List<Target> targets = new ArrayList<>(); // Assigns marker icon from Picasso
 
     private Trail trailSelected; // Selecting trails attributes TODO: 09/02/2020 Possibility to replace this with id from Trail???
 
@@ -109,9 +109,6 @@ public class TrailsActivity extends AppCompatActivity
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
-        // Attribute that knows dimensions of screen (Used so global map won't appear at beginning)
-        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> trailSelected.zoomIn());
 
         // Setting up the hamburger icon
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar,
@@ -195,6 +192,30 @@ public class TrailsActivity extends AppCompatActivity
 
                     markerArtwork.put(m, artworks.get(finalI));
                     latLngBuilder.include(m.getPosition());
+
+                    if (markerArtwork.size() == artworks.size()) {
+                        // Attribute that knows dimensions of screen (Used so global map won't appear at beginning)
+                        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> trailSelected.zoomIn());
+
+                        for (Trail t : trails) {
+                            t.setMap(mMap);
+                            trailsMenu.add(Menu.NONE, t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
+                        }
+
+                        //custom infowindow set up (check newly created class)
+                        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerArtwork);
+
+                        //infowindows in this map will use format set in CustomInfoWindowAdapter
+                        mMap.setInfoWindowAdapter(adapter);
+
+                        //set infowindow clicklistener
+                        infoWindowListener();
+
+                        // Show the first trail's markers, set it as actionBar's title and zoom in
+                        setTitle(trailSelected.getName());
+                        showMarkers(trailSelected, true);
+                        trailSelected.showTrail(TrailsActivity.this);
+                    }
                 }
 
                 @Override
@@ -210,26 +231,7 @@ public class TrailsActivity extends AppCompatActivity
 
             Picasso.get().load(getIconURL("red", "")).into(targets.get(i));
         }
-
-        for (Trail t : trails) {
-            t.setMap(mMap);
-            trailsMenu.add(Menu.NONE, (int) t.getId(), Menu.NONE, t.getName()); // Add menu item for each trail
-        }
-
-        //custom infowindow set up (check newly created class)
-        CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerArtwork);
-
-        //infowindows in this map will use format set in CustomInfoWindowAdapter
-        mMap.setInfoWindowAdapter(adapter);
-
-        //set infowindow clicklistener
-        infoWindowListener();
-
-        // Show the first trail's markers, set it as actionBar's title and zoom in
-        setTitle(trailSelected.getName());
-        showMarkers(trailSelected, true);
         mMap.setOnMarkerClickListener(this);
-        trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
     }
 
     // -- BUTTONS --
@@ -252,7 +254,7 @@ public class TrailsActivity extends AppCompatActivity
                 trailSelected = trails.get(menuItem.getItemId() - 1);
                 showMarkers(trailSelected, true);
                 trailSelected.zoomIn();
-                trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
+                trailSelected.showTrail(TrailsActivity.this);
                 break;
 
             case R.id.nav_artworks: // View all artworks via list
@@ -275,7 +277,7 @@ public class TrailsActivity extends AppCompatActivity
                     trailSelected = trails.get(menuItem.getItemId() - 1);
                     showMarkers(trailSelected, true);
                     trailSelected.zoomIn();
-                    trailSelected.showTrail(TrailsActivity.this, markerArtwork.inverse());
+                    trailSelected.showTrail(TrailsActivity.this);
 
                     setTitle(trailSelected.getName());
                 }
@@ -305,8 +307,8 @@ public class TrailsActivity extends AppCompatActivity
     // zoom in features.
     private void showDisableCurrentLocation() {
         //hide any open infowindows
-        for (TrailArtwork a : trailSelected.getTrailArtworks()) {
-            Marker key = markerArtwork.inverse().get(a.getArtwork());
+        for (TrailArtwork ta : trailSelected.getTrailArtworks()) {
+            Marker key = markerArtwork.inverse().get(ta.getArtwork());
             Objects.requireNonNull(key).hideInfoWindow();
         }
 
@@ -369,7 +371,7 @@ public class TrailsActivity extends AppCompatActivity
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(TrailAcquiredEvent event) {
-//        EventBus.getDefault().removeStickyEvent(event);
+//      EventBus.getDefault().removeStickyEvent(event);
         trails = event.trails;
         trailSelected = trails.get(0);
 
@@ -387,7 +389,7 @@ public class TrailsActivity extends AppCompatActivity
     // Called when an ArtworkAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(ArtworkAcquiredEvent event) {
-//        EventBus.getDefault().removeStickyEvent(event);
+//      EventBus.getDefault().removeStickyEvent(event);
         artworks = event.artworks;
 
         // Setting up the map
@@ -410,8 +412,10 @@ public class TrailsActivity extends AppCompatActivity
     public void showMarkers(Trail t, Boolean show) {
         targets.clear();
 
-        for (int i = 0; i < t.getTrailArtworks().size(); i++) {
-            Marker m = markerArtwork.inverse().get(t.getTrailArtworks().get(i).getArtwork());
+        Hashtable<Integer, Artwork> rankArtwork = t.getRankArtwork();
+
+        for (int i = 1; i <= rankArtwork.size(); i++) {
+            Marker m = markerArtwork.inverse().get(rankArtwork.get(i));
 
             if (show) {
                 targets.add(new Target() {
@@ -432,7 +436,7 @@ public class TrailsActivity extends AppCompatActivity
                     }
                 });
 
-                Picasso.get().load(getIconURL("red", Integer.toString(t.getTrailArtworks().get(i).getArtworkRank()))).into(targets.get(i));
+                Picasso.get().load(getIconURL("red", Integer.toString(i))).into(targets.get(i - 1));
             } else Objects.requireNonNull(m).setVisible(false);
         }
     }
@@ -579,14 +583,13 @@ public class TrailsActivity extends AppCompatActivity
                     // locationPolyline.setVisible(false);
                     //locationPolyline.remove();
                     setCurrentLocationMarker(latLng);
-                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition(), markerArtwork.inverse());
+                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
 
                 }
                 else{
                     setCurrentLocationMarker(latLng);
-                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition(), markerArtwork.inverse());
-                    trailSelected.zoomFit(currentLocationMarker, markerArtwork.inverse());
-
+                    trailSelected.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                    trailSelected.zoomFit(currentLocationMarker);
                 }
             }
         }

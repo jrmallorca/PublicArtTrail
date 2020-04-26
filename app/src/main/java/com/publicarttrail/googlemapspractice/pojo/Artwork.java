@@ -11,7 +11,7 @@ import java.util.Base64;
 // POJO converted from JSON
 public class Artwork {
     // Base attributes
-    private long id;
+    private int id;
     private String name;
     private String creator;
     private String description;
@@ -23,7 +23,7 @@ public class Artwork {
     private LatLng latLng;
     private Bitmap bitmap;
 
-    public Artwork(long id,
+    public Artwork(int id,
                    String name,
                    String creator,
                    String description,
@@ -39,7 +39,7 @@ public class Artwork {
         this.image = image;
     }
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 
