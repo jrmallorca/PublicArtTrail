@@ -4,7 +4,7 @@ package com.publicarttrail.googlemapspractice;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.publicarttrail.googlemapspractice.events.ArtworkEvent;
+import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 
 import org.greenrobot.eventbus.EventBus;
@@ -28,7 +28,7 @@ public class InfoPageTest {
                 "Description", 51.458530, -2.603452, "aa");
 
 
-        ArtworkEvent artworkEvent = new ArtworkEvent(artwork1);
+        ArtworkAcquiredEvent artworkEvent = new ArtworkAcquiredEvent(artwork1);
         EventBus.getDefault().postSticky(artworkEvent);
         ActivityScenario.launch(InfoPage.class);
 

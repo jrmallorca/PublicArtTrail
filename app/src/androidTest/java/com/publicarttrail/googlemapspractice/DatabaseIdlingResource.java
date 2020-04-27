@@ -5,7 +5,7 @@ import android.util.Log;
 import androidx.test.espresso.IdlingResource;
 
 import com.publicarttrail.googlemapspractice.networking.RetrofitService;
-import com.publicarttrail.googlemapspractice.networking.TrailsClient;
+import com.publicarttrail.googlemapspractice.networking.BackEndAPI;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 
 import java.util.List;
@@ -19,15 +19,15 @@ public class DatabaseIdlingResource implements IdlingResource{
     private boolean busUpdated;
     private volatile ResourceCallback resourceCallback;
     // Create the client that calls HTTP requests
-    TrailsClient trailsClient = RetrofitService
+    BackEndAPI backEndAPI = RetrofitService
             .getRetrofit()
-            .create(TrailsClient.class);
+            .create(BackEndAPI.class);
 
 
     public DatabaseIdlingResource() {
         databaseUpdated = false;
         // busUpdated = false;
-        trailsClient.getTrails()
+        backEndAPI.getTrails()
                 .clone()
                 .enqueue(trailsCallback);
         //EventBus.getDefault().register(this);

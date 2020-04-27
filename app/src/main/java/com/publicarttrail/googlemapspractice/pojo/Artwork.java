@@ -5,13 +5,13 @@ import android.graphics.BitmapFactory;
 
 import com.google.android.gms.maps.model.LatLng;
 
-import java.io.Serializable;
+
 import java.util.Base64;
 
 // POJO converted from JSON
 public class Artwork {
     // Base attributes
-    private long id;
+    private int id;
     private String name;
     private String creator;
     private String description;
@@ -20,11 +20,16 @@ public class Artwork {
     private String image;
 
     // More complex attributes for methods
-    private transient LatLng latLng;
-    private transient Bitmap bitmap;
+    private LatLng latLng;
+    private Bitmap bitmap;
 
-    public Artwork(long id, String name, String creator, String description, Double latitude,
-                        Double longitude, String image){
+    public Artwork(int id,
+                   String name,
+                   String creator,
+                   String description,
+                   double latitude,
+                   double longitude,
+                   String image) {
         this.id = id;
         this.name = name;
         this.creator = creator;
@@ -34,7 +39,7 @@ public class Artwork {
         this.image = image;
     }
 
-    public long getId() {
+    public int getId() {
         return id;
     }
 

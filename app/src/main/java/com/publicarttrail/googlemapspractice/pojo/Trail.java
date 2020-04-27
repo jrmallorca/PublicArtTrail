@@ -1,44 +1,35 @@
 package com.publicarttrail.googlemapspractice.pojo;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-
-import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 // POJO converted from JSON
 public class Trail {
     // Base attributes
-    private long id;
+    private int id;
     private String name;
-    private List<Artwork> artworks;
+    private List<TrailArtwork> trailArtworks;
 
     // More complex attributes for methods
-    // Hashmap to store markers of each artwork
-    private Map<Marker, Artwork> artworkMap = new HashMap<>();
-    private List<Marker> markers = new ArrayList<>();
     private GoogleMap map;
-    private LatLngBounds.Builder builder = new LatLngBounds.Builder();
+    private LatLngBounds.Builder builder;
 
-    public long getId() {
+    private Hashtable<Integer, Artwork> rankArtwork;
+
+    public int getId() {
         return id;
     }
 
@@ -46,67 +37,64 @@ public class Trail {
         return name;
     }
 
+    public List<TrailArtwork> getTrailArtworks() {
+        return trailArtworks;
+    }
+
     public List<Artwork> getArtworks() {
+        List<Artwork> artworks = new ArrayList<>();
+        for (TrailArtwork ta : trailArtworks) {
+            artworks.add(ta.getArtwork());
+        }
         return artworks;
     }
 
-    public Map<Marker, Artwork> getArtworkMap() {
-        return artworkMap;
+    public Hashtable<Integer, Artwork> getRankArtwork() {
+        if (rankArtwork == null) initRankArtwork();
+        return rankArtwork;
     }
 
     public void setMap(GoogleMap map) {
         this.map = map;
     }
 
-    public void setId(long id){ this.id = id; }
-    public void setName(String name){ this.name = name; }
-    public void setArtworks(List<Artwork> artWorks){ this.artworks = artWorks; }
-
-
-    // --- Marker methods ---
-
-    public void addMarker(Artwork artwork, Context context) {
-        Marker marker = map.addMarker(new MarkerOptions().position(artwork.getLatLng())
-                .title(artwork.getName())
-                .snippet(artwork.getCreator())
-                // TODO: 11/02/2020 Replace numberMarker parameter with Artwork id?
-                .icon(bitmapDescriptorFromVector(context, numberMarker(markers.size() + 1))));
-        artworkMap.put(marker, artwork);
-        marker.setVisible(false);
-        markers.add(marker);
-        builder.include(marker.getPosition());
+    public void setId(int id) {
+        this.id = id;
     }
 
-    // Function to set icon
-    private BitmapDescriptor bitmapDescriptorFromVector(Context context, int vectorId) {
-        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorId);
-        vectorDrawable.setBounds(0, 0, vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight());
-        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(), vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        vectorDrawable.draw(canvas);
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
+    public void setName(String name) {
+        this.name = name;
     }
 
-    // TODO: 10/02/2020 Hmmm... Dunno how to improve but there might be a better way??? Either replace this or reconsider ordering in DB
-    // Return marker depending on position of marker in the list
-    public int numberMarker(int i) {
-        if (i==1) return R.drawable.number_1;
-        else if (i==2) return R.drawable.number_2;
-        else if (i==3) return R.drawable.number_3;
-        else if (i==4) return R.drawable.number_4;
-        else if (i==5) return R.drawable.number_5;
-        else if (i==6) return R.drawable.number_6;
-        else if (i==7) return R.drawable.number_7;
-        else if (i==8) return R.drawable.number_8;
-        else if (i==9) return R.drawable.number_9;
-        else return R.drawable.number_10;
+    public void setTrailArtworks(List<TrailArtwork> trailArtworks) {
+        this.trailArtworks = trailArtworks;
     }
 
-    // Adjusts visibility of artwork markers
-    public void artworkMarkersVisibility(Boolean bool) {
-        for (Map.Entry element : artworkMap.entrySet()) {
-            Marker key = (Marker) element.getKey();
-            key.setVisible(bool);
+    public void setRankArtwork(Hashtable<Integer, Artwork> rankArtwork) {
+        this.rankArtwork = rankArtwork;
+    }
+
+    public Trail(int id,
+                 String name,
+                 List<TrailArtwork> trailArtworks) {
+        this.id = id;
+        this.name = name;
+        this.trailArtworks = trailArtworks;
+    }
+
+    private void initRankArtwork() {
+        if (rankArtwork == null) {
+            rankArtwork = new Hashtable<>();
+            for (TrailArtwork ta : trailArtworks)
+                rankArtwork.put(ta.getArtworkRank(), ta.getArtwork());
+        }
+    }
+
+    private void initLatLngBuilder() {
+        if (builder == null) {
+            builder = new LatLngBounds.Builder();
+            for (TrailArtwork ta : trailArtworks)
+                builder.include(ta.getArtwork().getLatLng());
         }
     }
 
@@ -114,6 +102,8 @@ public class Trail {
 
     // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
     public void zoomIn() {
+        if (builder == null) initLatLngBuilder();
+
         int padding = 70; // Offset from edges of the map in pixels
         LatLngBounds bounds = builder.build();
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
@@ -122,14 +112,11 @@ public class Trail {
 
     // Zoom to fit in all markers including current position
     public void zoomFit(Marker currentPosition) {
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        if (builder == null) initLatLngBuilder();
 
-        for (Map.Entry element : artworkMap.entrySet()) {
-            Marker key = (Marker) element.getKey();
-            builder.include(key.getPosition());
-        }
-
+        LatLngBounds.Builder builder = this.builder;
         builder.include(currentPosition.getPosition());
+
         LatLngBounds bounds = builder.build();
         int padding = 70; // Offset from edges of the map in pixels
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
@@ -137,30 +124,10 @@ public class Trail {
         map.animateCamera(cu);
     }
 
-    // TODO: 13/02/2020 Should we remove if unused?
-    @Deprecated
-    // Another zoom in function (not used)
-    public void zoom() {
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-
-        for (Map.Entry element : artworkMap.entrySet()) {
-            Marker key = (Marker) element.getKey();
-            builder.include(key.getPosition());
-        }
-
-        //builder.include(currentPosition.getPosition());
-        LatLngBounds bounds = builder.build();
-        int padding = 100; // Offset from edges of the map in pixels
-        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
-        map.moveCamera(cu);
-
-        //map.animateCamera(cu);
-    }
-
     // --- Visibility of trail methods ---
 
     // Creating URL for JSON request for trail
-    public String getUrl(LatLng origin, LatLng dest, String directionMode, List<LatLng> waypoints) {
+    public String getURLTrailPath(LatLng origin, LatLng dest, String directionMode, List<LatLng> waypoints) {
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
 
@@ -173,10 +140,9 @@ public class Trail {
         // Building the parameters to the web service
         StringBuilder str_waypoints = new StringBuilder("waypoints=");
 
-        for (int i = 0; i <= waypoints.size() - 1; i++) {
-            if (i != waypoints.size() - 1) {
-                str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude).append("|");
-            } else str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude);
+        for (int i = 0; i < waypoints.size(); i++) {
+            if (i != waypoints.size() - 1) str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude).append("|");
+            else str_waypoints.append(waypoints.get(i).latitude).append(",").append(waypoints.get(i).longitude);
         }
 
         String parameters = str_origin + "&" + str_dest + "&" + str_waypoints + "&" + mode;
@@ -189,7 +155,7 @@ public class Trail {
     }
 
     // Request for current location to trail
-    public String getUrl2(LatLng origin, LatLng dest, String directionMode) {
+    public String getURLUserPath(LatLng origin, LatLng dest, String directionMode) {
         // Origin of route
         String str_origin = "origin=" + origin.latitude + "," + origin.longitude;
 
@@ -210,31 +176,33 @@ public class Trail {
     }
 
     // Create array for waypoints
-    public List<LatLng> getWaypoints(List<Marker> markers) {
+    private List<LatLng> getWaypoints() {
         List<LatLng> wayPoints = new ArrayList<>();
-        for (int i = 1; i < markers.size() - 1; i++) {
-            wayPoints.add(markers.get(i).getPosition());
-        }
+
+        for (int i = 1; i <= trailArtworks.size(); i++)
+            wayPoints.add(Objects.requireNonNull(rankArtwork.get(i)).getLatLng());
+
         return wayPoints;
     }
 
-    // Request
     public void showTrail(Context context) {
+        if (rankArtwork.isEmpty()) initRankArtwork();
+
         new FetchURL(context)
-                .execute(getUrl(markers.get(0).getPosition(),
-                                markers.get(markers.size()-1).getPosition(),
+                .execute(getURLTrailPath(Objects.requireNonNull(rankArtwork.get(1)).getLatLng(),
+                                Objects.requireNonNull(rankArtwork.get(rankArtwork.size())).getLatLng(),
                    "walking",
-                                getWaypoints(markers)),
+                                getWaypoints()),
                          "walking");
     }
 
     // --- Location methods ---
 
-    // Get direction from current location to trail (still related to trails^^)
+    // Get direction from current location to trail
     public void getDirection(Context context, LatLng currentLocation) {
         new FetchURL(context)
-                .execute(getUrl2(currentLocation,
-                                 markers.get(0).getPosition(),
+                .execute(getURLUserPath(currentLocation,
+                                 Objects.requireNonNull(rankArtwork.get(1)).getLatLng(),
                     "driving"),
                          "driving");
     }
