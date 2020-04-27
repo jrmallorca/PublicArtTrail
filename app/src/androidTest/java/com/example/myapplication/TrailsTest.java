@@ -61,13 +61,10 @@ public class TrailsTest {
         //The message here is displayed iff the test fails
     }
 
-    @Test
-    public void testNumberMarker(){
-        int drawable = trail.numberMarker(5);
-        int check = R.drawable.number_5;
-        assertEquals("Not equal", check, drawable);
-    }
-
-
-
+//    @Test
+//    public void testNumberMarker(){
+//        int drawable = trail.numberMarker(5);
+//        int check = R.drawable.number_5;
+//        assertEquals("Not equal", check, drawable);
+//    }
 }

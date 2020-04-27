@@ -86,6 +86,8 @@ public class TrailsActivity extends AppCompatActivity
     private List<Trail> trails = new ArrayList<>();
     private List<Artwork> artworks = new ArrayList<>();
 
+    private Marker openInfoWindowMarker = null;
+
     private BiMap<Marker, Artwork> markerArtwork = HashBiMap.create(); // Two-way hashtable
     private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder(); // Builds a boundary based on the set of LatLngs provided
     private List<Target> targets = new ArrayList<>(); // Assigns marker icon from Picasso
@@ -117,6 +119,7 @@ public class TrailsActivity extends AppCompatActivity
         toggle.syncState();
 
         // This accounts for rotation, opening app again, etc.
+        // TODO: 26/04/2020 Need to know what this does again
         if (savedInstanceState == null)
             navigationView.setCheckedItem(0); // Set first trail
 
@@ -172,6 +175,7 @@ public class TrailsActivity extends AppCompatActivity
 
     // When the map is ready, add markers for all trails, sets current location, and creates a listener
     // for any marker selection
+    // TODO: 27/04/2020 Possibly save the default marker in resources and just load numbers from URL?
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -214,9 +218,7 @@ public class TrailsActivity extends AppCompatActivity
                         infoWindowListener();
 
                         // Show all markers
-                        setTitle(R.string.nav_home);
-                        latLngBuilder.build();
-                        showMarkers(true);
+                        onNavigationItemSelected(navigationView.getMenu().findItem(R.id.nav_home));
                     }
                 }
 
@@ -225,6 +227,7 @@ public class TrailsActivity extends AppCompatActivity
 
                 }
 
+                // TODO: 27/04/2020 Possibly use the default marker?
                 @Override
                 public void onPrepareLoad(Drawable placeHolderDrawable) {
 
@@ -257,6 +260,8 @@ public class TrailsActivity extends AppCompatActivity
                     currentTrail = null;
                     showMarkers(true);
                     zoomHome();
+
+                    setTitle(R.string.nav_home);
                 }
                 break;
 
@@ -292,15 +297,14 @@ public class TrailsActivity extends AppCompatActivity
         return true;
     }
 
-    // TODO: 16/02/2020 Add more functions (Go back from pressing info window for example)
+    // TODO: 16/02/2020 Add more functions
     @Override
     public void onBackPressed() {
         // Goes back when the drawer is open, else closes app
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+        if (drawer.isDrawerOpen(GravityCompat.START)) drawer.closeDrawer(GravityCompat.START);
+        else if (openInfoWindowMarker != null && openInfoWindowMarker.isInfoWindowShown()) openInfoWindowMarker.hideInfoWindow();
+        else if (currentTrail != null) onNavigationItemSelected(navigationView.getMenu().findItem(R.id.nav_home));
+        else super.onBackPressed();
     }
 
     // When the current location button is selected, show/hide current location
@@ -308,6 +312,7 @@ public class TrailsActivity extends AppCompatActivity
     // permission if needed
     // if the current location marker is already created, then the visibility is adjusted along with
     // zoom in features.
+    // TODO: 26/04/2020 Fix for when no trail is selected (all artworks view)
     private void showDisableCurrentLocation() {
         //hide any open infowindows
         for (TrailArtwork ta : currentTrail.getTrailArtworks()) {
@@ -336,6 +341,8 @@ public class TrailsActivity extends AppCompatActivity
     @Override
     public boolean onMarkerClick(Marker marker) {
         if (markerArtwork.containsKey(marker)) {
+            openInfoWindowMarker = marker;
+
             //moves map to show infowindow (don't know how it works->copy-paste)
             int zoom = (int)mMap.getCameraPosition().zoom;
             CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new

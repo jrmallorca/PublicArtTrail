@@ -98,21 +98,6 @@ public class Trail {
         }
     }
 
-    // TODO: 10/02/2020 Remove
-    // Return marker depending on position of marker in the list
-    public int numberMarker(int i) {
-        if (i==1) return R.drawable.number_1;
-        else if (i==2) return R.drawable.number_2;
-        else if (i==3) return R.drawable.number_3;
-        else if (i==4) return R.drawable.number_4;
-        else if (i==5) return R.drawable.number_5;
-        else if (i==6) return R.drawable.number_6;
-        else if (i==7) return R.drawable.number_7;
-        else if (i==8) return R.drawable.number_8;
-        else if (i==9) return R.drawable.number_9;
-        else return R.drawable.number_10;
-    }
-
     // --- Zoom methods ---
 
     // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
