@@ -2,7 +2,6 @@ package com.publicarttrail.googlemapspractice;
 
 import androidx.test.espresso.IdlingResource;
 
-import com.publicarttrail.googlemapspractice.events.ArtworkEvent;
 import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
 
 import org.greenrobot.eventbus.EventBus;

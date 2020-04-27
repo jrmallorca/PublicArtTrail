@@ -43,7 +43,7 @@ public class ListPageTest {
         Trail trail1 = new Trail();
         trail1.setId(1);
         trail1.setName("RFG");
-        trail1.setArtworks(trail);
+        trail1.setTrailArtworks(trail);
         List<Trail> trailList = new ArrayList<>();
         trailList.add(trail1);
         TrailAcquiredEvent trailAcquiredEvent = new TrailAcquiredEvent(trailList);

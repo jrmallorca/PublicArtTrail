@@ -7,6 +7,11 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
+    <!-- Navigation menu -->
+    <string name="nav_home">Home</string>
+    <string name="nav_trails">Trails</string>
+    <string name="nav_artworks">Artworks</string>
+
     <string name="public_art_trail">Public Art Trail</string>
     <string name="title_activity_new">Map</string>
     <string name="title_activity_info_page">InfoPage</string>

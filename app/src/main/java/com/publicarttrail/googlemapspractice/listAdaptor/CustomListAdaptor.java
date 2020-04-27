@@ -11,12 +11,13 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.publicarttrail.googlemapspractice.InfoPage;
 import com.publicarttrail.googlemapspractice.R;
-import com.publicarttrail.googlemapspractice.events.ArtworkEvent;
+import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 
 import org.greenrobot.eventbus.EventBus;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class CustomListAdaptor extends RecyclerView.Adapter<ViewHolder> {
 
@@ -47,7 +48,7 @@ public class CustomListAdaptor extends RecyclerView.Adapter<ViewHolder> {
             @Override
             public void onClick(View v) {
                 EventBus.getDefault()
-                        .postSticky(new ArtworkEvent(artwork));
+                        .postSticky(new ArtworkAcquiredEvent(Collections.singletonList(artwork)));
 
                 Intent info = new Intent(context, InfoPage.class);
                 context.startActivity(info);

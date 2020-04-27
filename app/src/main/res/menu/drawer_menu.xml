@@ -4,8 +4,18 @@
     tools:showIn="navigation_view">
 
     <!-- Options for trails -->
-    <group
-        android:id="@+id/nav_trails_group"
-        android:checkableBehavior="single"/>
+    <item
+        android:id="@+id/nav_home"
+        android:title="@string/nav_home" />
+    <item
+        android:id="@+id/nav_trails"
+        android:title="@string/nav_trails">
+        <menu>
+
+        </menu>
+    </item>
+    <item
+        android:id="@+id/nav_artworks"
+        android:title="@string/nav_artworks" />
 
 </menu>
