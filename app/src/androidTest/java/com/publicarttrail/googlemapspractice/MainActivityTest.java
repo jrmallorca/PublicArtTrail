@@ -4,6 +4,10 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.IdlingRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.publicarttrail.googlemapspractice.idlingResource.DatabaseIdlingResource;
+import com.publicarttrail.googlemapspractice.idlingResource.EventBusIdlingResourceTrail;
+import com.publicarttrail.googlemapspractice.idlingResource.IdlingResourceSleeper;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

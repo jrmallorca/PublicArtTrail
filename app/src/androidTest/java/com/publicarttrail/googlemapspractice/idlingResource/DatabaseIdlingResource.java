@@ -1,4 +1,4 @@
-package com.publicarttrail.googlemapspractice;
+package com.publicarttrail.googlemapspractice.idlingResource;
 
 import android.util.Log;
 

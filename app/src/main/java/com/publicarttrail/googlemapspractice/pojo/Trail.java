@@ -1,6 +1,7 @@
 package com.publicarttrail.googlemapspractice.pojo;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -8,7 +9,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
-import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ public class Trail {
     // More complex attributes for methods
     private GoogleMap map;
     private LatLngBounds.Builder builder;
+
 
     private Hashtable<Integer, Artwork> rankArtwork;
 
@@ -93,8 +94,10 @@ public class Trail {
     private void initLatLngBuilder() {
         if (builder == null) {
             builder = new LatLngBounds.Builder();
-            for (TrailArtwork ta : trailArtworks)
+            for (TrailArtwork ta : trailArtworks) {
+                Log.d("name:",  ta.getArtwork().getName());
                 builder.include(ta.getArtwork().getLatLng());
+            }
         }
     }
 
@@ -106,21 +109,28 @@ public class Trail {
 
         int padding = 70; // Offset from edges of the map in pixels
         LatLngBounds bounds = builder.build();
+
+            Log.d("bound:",  bounds.toString());
+        Log.d("bound:",  builder.toString());
+
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
         map.moveCamera(cu);
     }
 
     // Zoom to fit in all markers including current position
     public void zoomFit(Marker currentPosition) {
-        if (builder == null) initLatLngBuilder();
 
-        LatLngBounds.Builder builder = this.builder;
-        builder.include(currentPosition.getPosition());
+        LatLngBounds.Builder builderNew = new LatLngBounds.Builder();
+        for (TrailArtwork ta : trailArtworks) {
+            builderNew.include(ta.getArtwork().getLatLng());
+        }
+        builderNew.include(currentPosition.getPosition());
 
-        LatLngBounds bounds = builder.build();
+        LatLngBounds bounds = builderNew.build();
+
         int padding = 70; // Offset from edges of the map in pixels
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
-        //map.moveCamera(cu);
+
         map.animateCamera(cu);
     }
 
