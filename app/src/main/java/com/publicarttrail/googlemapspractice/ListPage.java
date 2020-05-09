@@ -39,9 +39,18 @@ public class ListPage extends AppCompatActivity {
     private ArrayList<Artwork> getArtworks(ArrayList<Trail>trails){
         ArrayList<Artwork> artworks = new ArrayList<>();
         for (Trail trail: trails){
-            artworks.addAll(trail.getArtworks());
+            for(Artwork trailArtwork:trail.getArtworks()) {
+                addIfNotPresent(artworks, trailArtwork);
+            }
         }
         return artworks;
+    }
+
+    private void addIfNotPresent(ArrayList<Artwork> artworks, Artwork artworkToBeAdded){
+        for(Artwork artwork:artworks){
+            if (artwork.getName().equals(artworkToBeAdded.getName())) return;
+        }
+        artworks.add(artworkToBeAdded);
     }
 
     private void initializeViews(){

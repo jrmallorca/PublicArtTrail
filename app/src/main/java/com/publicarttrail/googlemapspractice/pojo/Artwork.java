@@ -2,11 +2,11 @@ package com.publicarttrail.googlemapspractice.pojo;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
+import android.util.Base64;
 
 import com.google.android.gms.maps.model.LatLng;
 
-
-import java.util.Base64;
 
 // POJO converted from JSON
 public class Artwork {
@@ -62,8 +62,14 @@ public class Artwork {
 
     public Bitmap getBitmap() {
         if (bitmap == null) {
-            byte[] imgBytes = Base64.getDecoder().decode(image);
+            Log.d("en4", image);
+           // byte[] imgBytes = Base64.getDecoder().decode(image);
+            byte[] imgBytes = Base64.decode(image.getBytes(), Base64.DEFAULT);
+
             bitmap = BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+
+            //byte[] imageAsBytes = Base64.decode(b64.getBytes(), Base64.DEFAULT);
+            //return BitmapFactory.decodeByteArray(imageAsBytes, 0, imageAsBytes.length);
         }
         return bitmap;
     }

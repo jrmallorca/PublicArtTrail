@@ -1,4 +1,4 @@
-package com.publicarttrail.googlemapspractice;
+package com.publicarttrail.googlemapspractice.recyclerView;
 
 import android.content.res.Resources;
 import android.view.View;

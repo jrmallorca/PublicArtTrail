@@ -1,16 +1,16 @@
 package com.example.myapplication;
 
 import com.google.android.gms.maps.model.LatLng;
-import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
-
 import com.publicarttrail.googlemapspractice.pojo.Trail;
+import com.publicarttrail.googlemapspractice.pojo.TrailArtwork;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 
@@ -22,12 +22,13 @@ public class TrailsTest {
     public void setUp(){
         Artwork artwork1 = new Artwork(1, "Tyndall Gate", "John",
                 "Description", 51.458530, -2.603452, "aa");
-        List<Artwork> artworks = new ArrayList<>();
-        artworks.add(artwork1);
-        trail = new Trail();
+        TrailArtwork trailArtwork1 = new TrailArtwork(artwork1, 1);
+        List<TrailArtwork> artworks = new ArrayList<>();
+        artworks.add(trailArtwork1);
+
+        trail = new Trail(1, "RFG", artworks);
         trail.setId(1);
         trail.setName("RFG");
-        trail.setTrailArtworks(artworks);
 
     }
 

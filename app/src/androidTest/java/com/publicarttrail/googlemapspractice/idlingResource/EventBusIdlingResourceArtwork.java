@@ -1,19 +1,18 @@
-package com.publicarttrail.googlemapspractice;
+package com.publicarttrail.googlemapspractice.idlingResource;
 
 import androidx.test.espresso.IdlingResource;
 
-import com.publicarttrail.googlemapspractice.events.TrailAcquiredEvent;
+import com.publicarttrail.googlemapspractice.events.ArtworkAcquiredEvent;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-
-public class EventBusIdlingResourceTrail implements IdlingResource{
+public class EventBusIdlingResourceArtwork implements IdlingResource{
     private boolean busUpdated;
     private volatile ResourceCallback resourceCallback;
 
 
-    public EventBusIdlingResourceTrail() {
+    public EventBusIdlingResourceArtwork() {
         busUpdated = false;
         EventBus.getDefault().register(this);
     }
@@ -21,7 +20,7 @@ public class EventBusIdlingResourceTrail implements IdlingResource{
 
 
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
-    public void onEvent(TrailAcquiredEvent event) {
+    public void onEvent(ArtworkAcquiredEvent event) {
         busUpdated = true;
         EventBus.getDefault().removeStickyEvent(event);
     }

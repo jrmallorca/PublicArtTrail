@@ -65,7 +65,6 @@ import java.util.Objects;
 public class TrailsActivity extends AppCompatActivity
         implements OnMapReadyCallback, NavigationView.OnNavigationItemSelectedListener, GoogleMap.OnMarkerClickListener, TaskLoadedCallback {
     private GoogleMap mMap;
-
     // Navigation menu attributes
     private DrawerLayout drawer;
     private NavigationView navigationView;
@@ -106,7 +105,7 @@ public class TrailsActivity extends AppCompatActivity
         // Setting up the toolbar we created as the actionBar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
+        //context = getApplicationContext();
         // Setting up the drawer
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
@@ -150,7 +149,7 @@ public class TrailsActivity extends AppCompatActivity
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         EventBus.getDefault().unregister(this);
         super.onPause();
         Log.d("debugon", "pausecalled");
@@ -189,10 +188,10 @@ public class TrailsActivity extends AppCompatActivity
                     Artwork a = artworks.get(finalI);
 
                     Marker m = mMap.addMarker(new MarkerOptions()
-                                    .position(a.getLatLng())
-                                    .title(a.getName())
-                                    .snippet(a.getCreator())
-                                    .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
+                            .position(a.getLatLng())
+                            .title(a.getName())
+                            .snippet(a.getCreator())
+                            .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
 
                     markerArtwork.put(m, a);
                     latLngBuilder.include(m.getPosition());
@@ -200,10 +199,13 @@ public class TrailsActivity extends AppCompatActivity
                     // Once all icons are set...
                     if (markerArtwork.size() == artworks.size()) {
                         // Attribute that knows dimensions of screen (Used so global map won't appear at beginning)
-                        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> zoomHome());
+                        Log.d("bound:3", "onmapready");
+                        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> check());
+
 
                         // Set map, add menu item for each trail
                         for (Trail t : trails) {
+                           // Log.d("mylogr", "I'm fshere");
                             t.setMap(mMap);
                             trailsMenu.add(Menu.NONE, t.getId(), Menu.NONE, t.getName());
                         }
@@ -234,9 +236,15 @@ public class TrailsActivity extends AppCompatActivity
                 }
             });
 
-            Picasso.get().load(getIconURL("red", "")).into(targets.get(i));
+            Picasso.get().load(getIconURL("red", "")).resize(50, 0).into(targets.get(i));
         }
         mMap.setOnMarkerClickListener(this);
+    }
+
+    void check() {
+        Log.d("bound:3", "check");
+        if (currentTrail == null) zoomHome();
+        else currentTrail.zoomIn();
     }
 
     // -- BUTTONS --
@@ -250,16 +258,22 @@ public class TrailsActivity extends AppCompatActivity
                 if (currentTrail != null) {
                     // Hide current trail's markers and polyline, and location
                     showMarkers(currentTrail, false);
-                    if (isCurrentLocSet) {
+
+                    if (isCurrentLocSet) { // Disable location when selecting new trail
+                        stopService();
                         currentLocationMarker.setVisible(false);
-                        locationPolyline.setVisible(false);
+                        currentLocationMarker.remove();
+                        currentLocationMarker = null;
+                        if(currentTrail!=null) locationPolyline.setVisible(false);
                     }
                     if (trailPolyline != null) trailPolyline.setVisible(false);
 
                     // Show all artwork markers
                     currentTrail = null;
                     showMarkers(true);
+                    Log.d("bound:3", "navigation");
                     zoomHome();
+
 
                     setTitle(R.string.nav_home);
                 }
@@ -277,15 +291,18 @@ public class TrailsActivity extends AppCompatActivity
 
                     showMarkers(false);
                     if (isCurrentLocSet) { // Disable location when selecting new trail
+                        stopService();
                         currentLocationMarker.setVisible(false);
-                        locationPolyline.setVisible(false);
+                        currentLocationMarker.remove();
+                        currentLocationMarker = null;
+                        if(currentTrail!=null) locationPolyline.setVisible(false);
                     }
                     if (trailPolyline != null) trailPolyline.setVisible(false);
 
                     // Show selected trail's markers and polyline
                     currentTrail = trails.get(menuItem.getItemId() - 1);
                     showMarkers(currentTrail, true);
-                    currentTrail.zoomIn();
+                    //currentTrail.zoomIn();
                     currentTrail.showTrail(TrailsActivity.this);
 
                     setTitle(currentTrail.getName());
@@ -302,8 +319,10 @@ public class TrailsActivity extends AppCompatActivity
     public void onBackPressed() {
         // Goes back when the drawer is open, else closes app
         if (drawer.isDrawerOpen(GravityCompat.START)) drawer.closeDrawer(GravityCompat.START);
-        else if (openInfoWindowMarker != null && openInfoWindowMarker.isInfoWindowShown()) openInfoWindowMarker.hideInfoWindow();
-        else if (currentTrail != null) onNavigationItemSelected(navigationView.getMenu().findItem(R.id.nav_home));
+        else if (openInfoWindowMarker != null && openInfoWindowMarker.isInfoWindowShown())
+            openInfoWindowMarker.hideInfoWindow();
+        else if (currentTrail != null)
+            onNavigationItemSelected(navigationView.getMenu().findItem(R.id.nav_home));
         else super.onBackPressed();
     }
 
@@ -315,26 +334,38 @@ public class TrailsActivity extends AppCompatActivity
     // TODO: 26/04/2020 Fix for when no trail is selected (all artworks view)
     private void showDisableCurrentLocation() {
         //hide any open infowindows
-        for (TrailArtwork ta : currentTrail.getTrailArtworks()) {
-            Marker key = markerArtwork.inverse().get(ta.getArtwork());
-            Objects.requireNonNull(key).hideInfoWindow();
+        if (currentTrail != null) {
+            for (TrailArtwork ta : currentTrail.getTrailArtworks()) {
+                Marker key = markerArtwork.inverse().get(ta.getArtwork());
+                Objects.requireNonNull(key).hideInfoWindow();
+            }
         }
 
         if (!isCurrentLocSet) {
             startService();
-        } else{
-            Log.d("mylogr",  "current_loc_is_null");
+        } else {
+            Log.d("mylogr", "current_loc_is_null");
             //askingForDirection = false;
-            isCurrentLocSet = false;
+            //isCurrentLocSet = false;
             stopService();
-            isCurrentLocSet = false;
+            //isCurrentLocSet = false;
+            currentLocationMarker.setVisible(false);
             currentLocationMarker.remove();
             currentLocationMarker = null;
-            locationPolyline.setVisible(false);
-            locationPolyline.remove();
-            locationPolyline = null;
-            // locationPolyline = null;
-            currentTrail.zoomIn();
+            Log.d("mylogr", "marker removed");
+
+            if(currentTrail!=null) {
+                Log.d("mylogr", "remove polyline");
+
+                locationPolyline.setVisible(false);
+                locationPolyline.remove();
+                locationPolyline = null;
+                // locationPolyline = null;
+                currentTrail.zoomIn();
+            }
+            else{
+                zoomHome();
+            }
         }
     }
 
@@ -344,11 +375,11 @@ public class TrailsActivity extends AppCompatActivity
             openInfoWindowMarker = marker;
 
             //moves map to show infowindow (don't know how it works->copy-paste)
-            int zoom = (int)mMap.getCameraPosition().zoom;
+            int zoom = (int) mMap.getCameraPosition().zoom;
             CameraUpdate cu = CameraUpdateFactory.newLatLngZoom(new
-                    LatLng(marker.getPosition().latitude + (double)90/Math.pow(2, zoom),
+                    LatLng(marker.getPosition().latitude + (double) 90 / Math.pow(2, zoom),
                     marker.getPosition().longitude), zoom);
-            mMap.animateCamera(cu,480,null);
+            mMap.animateCamera(cu, 480, null);
             marker.showInfoWindow();
 
             return true;
@@ -381,6 +412,22 @@ public class TrailsActivity extends AppCompatActivity
     public void zoomHome() {
         int padding = 70; // Offset from edges of the map in pixels
         LatLngBounds bounds = latLngBuilder.build();
+        Log.d("bound:3", bounds.toString());
+        Log.d("bound:3", "hello");
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+        mMap.moveCamera(cu);
+    }
+
+    public void zoomHomeWithLoc(LatLng currentLocation) {
+        int padding = 70; // Offset from edges of the map in pixels
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        for(Artwork artwork:artworks){
+            builder.include(artwork.getLatLng());
+        }
+        builder.include(currentLocation);
+        LatLngBounds bounds = builder.build();
+        Log.d("bound:3", bounds.toString());
+        Log.d("bound:3", "hello");
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
         mMap.moveCamera(cu);
     }
@@ -453,7 +500,7 @@ public class TrailsActivity extends AppCompatActivity
                     }
                 });
 
-                Picasso.get().load(getIconURL("red", Integer.toString(i))).into(targets.get(i - 1));
+                Picasso.get().load(getIconURL("red", Integer.toString(i))).resize(50, 0).into(targets.get(i - 1));
             } else Objects.requireNonNull(m).setVisible(false);
         }
     }
@@ -481,7 +528,7 @@ public class TrailsActivity extends AppCompatActivity
                     }
                 });
 
-                Picasso.get().load(getIconURL("red", "")).into(targets.get(i));
+                Picasso.get().load(getIconURL("red", "")).resize(50, 0).into(targets.get(i));
                 i++;
             } else Objects.requireNonNull(m).setVisible(false);
         }
@@ -504,15 +551,22 @@ public class TrailsActivity extends AppCompatActivity
     }
 
     //stop tracking
-    void stopService(){
+    void stopService() {
+        isCurrentLocSet = false;
         stopService(intent);
     }
 
     private void setCurrentLocationMarker(LatLng latLng) {
+        if(currentLocationMarker!=null){
+            currentLocationMarker.setVisible(false);
+            currentLocationMarker.remove();
+            currentLocationMarker = null;}
         isCurrentLocSet = true;
         MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("You are here!")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         currentLocationMarker = mMap.addMarker(markerOptions);
+        Log.d("mylogr", "setcurrent2");
+
         currentLocationMarker.setVisible(true);
     }
 
@@ -521,7 +575,7 @@ public class TrailsActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
             case Request_Code:
-                if (grantResults.length>0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     startService();
                 }
                 break;
@@ -534,79 +588,66 @@ public class TrailsActivity extends AppCompatActivity
         PolylineOptions polylineOptions = (PolylineOptions) values[0];
         List<PatternItem> pattern = Arrays.asList(new Dot(), new Gap(20));
 
-        if (isPolylineForTrail){
+        if (isPolylineForTrail) {
             trailPolyline = mMap.addPolyline(polylineOptions);
             trailPolyline.setColor(Color.BLUE);
             trailPolyline.setPattern(pattern);
             isPolylineForTrail = false;
-        } else{
-            Log.d("mylogr",  "check");
-            if (locationPolyline!=null){
+        } else {
+            if(isCurrentLocSet){
+            Log.d("mylogr", "check");
+            if (locationPolyline != null) {
+                Log.d("mylogr", "check1");
+
                 locationPolyline.setPoints(polylineOptions.getPoints());
                 locationPolyline.setVisible(true);
             } else {
+                Log.d("mylogr", "check2");
                 locationPolyline = mMap.addPolyline(polylineOptions);
                 locationPolyline.setColor(Color.RED);
                 locationPolyline.setPattern(pattern);
-            }
+            }}
 
-            if(!isCurrentLocSet) locationPolyline.setVisible(false);
+            //if (!isCurrentLocSet) locationPolyline.setVisible(false);
             //askingForDirection = false;
         }
 
-        //if polyline is for direction from current location to the trail
-      /*  if (askingForDirection) {
-
-            Log.d("mylogr",  "check");
-            if (locationPolyline!=null){
-                locationPolyline.setPoints(polylineOptions.getPoints());
-                locationPolyline.setVisible(true);
-            }
-            else {
-                locationPolyline = mMap.addPolyline(polylineOptions);
-                locationPolyline.setColor(Color.RED);
-                locationPolyline.setPattern(pattern);
-            }
-
-            if(!isCurrentLocSet){locationPolyline.setVisible(false);}
-            //askingForDirection = false;
-        }
-        //if polyline is for trail
-        else {
-            //Log.d("mylogr",  "why");
-
-            trailPolyline = mMap.addPolyline(polylineOptions);
-            trailPolyline.setColor(Color.BLUE);
-            trailPolyline.setPattern(pattern);
-
-        }*/
     }
 
     //inner class (describes what to do when tracking starts)
-    public class LocationBroadcastReceiver extends BroadcastReceiver{
+    public class LocationBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             int number = intent.getIntExtra("number", 0);
-            if(intent.getAction().equals("ACT_LOC") && number!=counter){
+            if (intent.getAction().equals("ACT_LOC") && number != counter) {
 
-                counter=number;
+                counter = number;
                 double latitude = intent.getDoubleExtra("latitude", 0f);
                 double longitude = intent.getDoubleExtra("longitude", 0f);
                 LatLng latLng = new LatLng(latitude, longitude);
 
-                if(currentLocationMarker!=null&&locationPolyline!=null){
-                    currentLocationMarker.remove();
-                    // locationPolyline.setVisible(false);
+                if (currentLocationMarker != null && locationPolyline != null) {
+                    Log.d("mylogr", "zoomnotcheck2");
+
+                    //locationPolyline.setVisible(false);
                     //locationPolyline.remove();
                     setCurrentLocationMarker(latLng);
-                    currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                    if (currentTrail != null)
+                        currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
 
-                }
-                else{
+                } else {
+                    Log.d("mylogr", "setcurrent");
                     setCurrentLocationMarker(latLng);
-                    currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-                    currentTrail.zoomFit(currentLocationMarker);
+                    Log.d("mylogr", "zoomnotcheck");
+                    if (currentTrail != null) {
+                        currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                        currentTrail.zoomFit(currentLocationMarker);
+                    }
+                    else{
+                        Log.d("mylogr", "zoomnot");
+                        zoomHomeWithLoc(currentLocationMarker.getPosition());
+                    }
                 }
             }
         }
