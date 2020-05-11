@@ -40,9 +40,7 @@ jobs:
 
 
 
-      - run:
-          name: Run UnitTest
-          command: ./gradlew testDemoDebugUnitTest
+     
       - run:
           name: Setup emulator
           command: sdkmanager "system-images;android-16;default;armeabi-v7a" && echo "no" | avdmanager create avd -n test -k "system-images;android-16;default;armeabi-v7a"
@@ -66,5 +64,9 @@ jobs:
           destination: reports
       - store_test_results:
           path: app/build/test-results
+
+
+
+
 
 
