@@ -213,7 +213,7 @@ public class Trail {
         new FetchURL(context)
                 .execute(getURLUserPath(currentLocation,
                                  Objects.requireNonNull(rankArtwork.get(1)).getLatLng(),
-                    "driving"),
-                         "driving");
+                    "walking"),
+                         "walking");
     }
 }

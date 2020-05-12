@@ -3,7 +3,6 @@ package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -30,8 +29,6 @@ import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObjectNotFoundException;
 import androidx.test.uiautomator.UiSelector;
-//import androidx.test.InstrumentationTes
-
 
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.model.LatLng;
@@ -47,6 +44,7 @@ import com.publicarttrail.googlemapspractice.pojo.TrailArtwork;
 
 import org.greenrobot.eventbus.EventBus;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -64,9 +62,13 @@ import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
+//import androidx.test.InstrumentationTes
+
 
 @RunWith(AndroidJUnit4.class)
 public class TrailsActivityTest {
+
+    private static boolean stopThread = false;
 
     //before launching, setup an event bus
     @Rule
@@ -81,7 +83,6 @@ public class TrailsActivityTest {
 
     //private Resources resources = InstrumentationRegistry.getInstrumentation().getTargetContext().getResources();
     //private Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-    private Context context;
 
 
 
@@ -117,16 +118,20 @@ public class TrailsActivityTest {
         EventBus.getDefault().postSticky(trailAcquiredEvent);
         ArtworkAcquiredEvent artworkAcquiredEvent = new ArtworkAcquiredEvent(artworks);
         EventBus.getDefault().postSticky(artworkAcquiredEvent);
-        //context = mActivityRule.getActivity().getApplicationContext();
 
     }
 
     @Before
     public void before() {
-      //  resources = ApplicationProvider.getApplicationContext().getResources();
-        //context = InstrumentationRegistry.getTargetContext();
+
         mActivityRule.getActivity();
 
+
+    }
+
+    @After
+    public void afterEveryTest(){
+        if (stopThread==true) stopThread = false;
 
     }
 
@@ -147,8 +152,7 @@ public class TrailsActivityTest {
     //function for mocking moving user
     public void setUpMovingUser(){
         LatLng startPos = new LatLng(51.457899, -2.603351);
-        startUpdates(mActivityRule.getActivity(), new Handler(Looper.getMainLooper()),
-                startPos, 20, 5);
+        startUpdates(mActivityRule.getActivity(), new Handler(Looper.getMainLooper()), startPos, 20, 5);
     }
 
     //function for mocking still user
@@ -196,10 +200,16 @@ public class TrailsActivityTest {
         marker3.click();
     }
 
+    //@Test
+    public void locTest() throws InterruptedException, UiObjectNotFoundException {
+        currentLocationForStillUser();
+        Thread.sleep(2000);
+        cpurrentLocationForMovingUser();
+    }
 
     //Tests if marker is updated for user
     @Test
-    public void currentLocationForMovingUser()throws UiObjectNotFoundException, InterruptedException{
+    public void cpurrentLocationForMovingUser()throws UiObjectNotFoundException, InterruptedException{
         setUpMovingUser(); //set up mock location
         onView(withId(R.id.currentLocation)).perform(ViewActions.click()); //click button
         Thread.sleep(2000);
@@ -214,7 +224,7 @@ public class TrailsActivityTest {
         UiObject currentLocation2 = mDevice2.
                 findObject(new UiSelector().descriptionContains("You are here!"));//find current loc marker after 3s
         Rect rects2 = currentLocation2.getVisibleBounds(); //get position on screen
-
+        stopThread = true; //this will stop the thread thats mocking location so that next tests arent affected
         Assert.assertNotEquals(rects1, rects2); //confirm both positions are not equal
         currentLocation.click(); //click button to go back to normal screen
 
@@ -238,8 +248,7 @@ public class TrailsActivityTest {
         UiObject currentLocation2 = mDevice2.
                 findObject(new UiSelector().descriptionContains("You are here!"));//find current loc marker after 3s
         Rect rects2 = currentLocation2.getVisibleBounds(); //get position on screen
-
-
+        stopThread = true; //this will stop the thread thats mocking location so that next tests arent affected
         Assert.assertEquals(rects1, rects2); //confirm both positions are equal
         currentLocation.click(); //click button to go back to normal screen
 
@@ -352,19 +361,19 @@ public class TrailsActivityTest {
     }
 
     @Test
-    public void trailCurrentLocationForMovingUser() throws InterruptedException, UiObjectNotFoundException {
+    public void abarailCurrentLocationForMovingUser() throws InterruptedException, UiObjectNotFoundException {
         selectTrail();
-        currentLocationForMovingUser();
+        cpurrentLocationForMovingUser();
     }
 
     @Test
-    public void trailCurrentLocationForStillUser() throws InterruptedException, UiObjectNotFoundException {
+    public void ttbcrailCurrentLocationForStillUser() throws InterruptedException, UiObjectNotFoundException {
         selectTrail();
         currentLocationForStillUser();
     }
 
     @Test
-    public void trailInfoWindow() throws InterruptedException, UiObjectNotFoundException {
+    public void tbbrailInfoWindow() throws InterruptedException, UiObjectNotFoundException {
         selectTrail();
         infoWindow();
     }
@@ -385,39 +394,38 @@ public class TrailsActivityTest {
             final Activity activity, final Handler mHandler, final LatLng pos,
             final double heading, final double movement) {
 
+        Runnable runnable = new Runnable(){
+                private LatLng myPos = new LatLng(pos.latitude,pos.longitude);
 
-        mHandler.postDelayed(new Runnable() {
-            private LatLng myPos = new LatLng(pos.latitude,pos.longitude);
+                @Override
+                public void run() {
+                    if(stopThread==true){return;}
 
-            @Override
-            public void run() {
+                    Location mockLocation = new Location(LocationManager.GPS_PROVIDER); // a string
+                    mockLocation.setLatitude(myPos.latitude);  // double
+                    mockLocation.setLongitude(myPos.longitude);
+                    mockLocation.setAltitude(100);
+                    mockLocation.setTime(System.currentTimeMillis());
+                    mockLocation.setAccuracy(1);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        mockLocation.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+                    }
 
-                Location mockLocation = new Location(LocationManager.GPS_PROVIDER); // a string
-                mockLocation.setLatitude(myPos.latitude);  // double
-                mockLocation.setLongitude(myPos.longitude);
-                mockLocation.setAltitude(100);
-                mockLocation.setTime(System.currentTimeMillis());
-                mockLocation.setAccuracy(1);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    mockLocation.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+                    LocationServices.getFusedLocationProviderClient(activity).setMockMode(true);
+                    LocationServices.getFusedLocationProviderClient(activity).setMockLocation(mockLocation);
+
+                    // compute next position
+                    // (In a test utility class in this example: LocationUtils.java)
+                    //  Utility - uses SphericalUtil to maintain a position based on
+                    //  initial starting position, heading and movement value (in
+                    //   meters) applied every 1 second.
+                    myPos = SphericalUtil.computeOffset(myPos, movement, heading);
+                    mHandler.postDelayed(this, 1000);
                 }
+            };
 
-                LocationServices.getFusedLocationProviderClient(activity).setMockMode(true);
-                LocationServices.getFusedLocationProviderClient(activity).setMockLocation(mockLocation);
-
-
-                // compute next position
-                // (In a test utility class in this example: LocationUtils.java)
-                //  Utility - uses SphericalUtil to maintain a position based on
-                //  initial starting position, heading and movement value (in
-                //   meters) applied every 1 second.
-                myPos = SphericalUtil.computeOffset(myPos, movement, heading);
-                mHandler.postDelayed(this, 1000);
-            }
-        }, 1000);
+        mHandler.postDelayed(runnable, 1000);
     }
-
-
 
 
 
