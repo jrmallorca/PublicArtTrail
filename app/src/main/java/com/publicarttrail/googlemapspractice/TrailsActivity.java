@@ -1,14 +1,17 @@
 package com.publicarttrail.googlemapspractice;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -78,6 +81,7 @@ public class TrailsActivity extends AppCompatActivity
     private Intent intent;
     private int counter = -1;
     private Boolean isPolylineForTrail = true;
+    private Boolean shouldShowLoc = true;
 
     // Event-related fields
     private final int EVENT_LIMIT = 2;
@@ -127,6 +131,7 @@ public class TrailsActivity extends AppCompatActivity
 
         // Create the buttons
         createButtons();
+        
 
         EventBus.getDefault().register(this);
         Log.d("debugon", "createcalled");
@@ -178,7 +183,7 @@ public class TrailsActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        Menu trailsMenu = navigationView.getMenu().getItem(1).getSubMenu();
+        Menu trailsMenu = navigationView.getMenu().getItem(2).getSubMenu();
 
         for (int i = 0; i < artworks.size(); i++) {
             int finalI = i;
@@ -208,7 +213,8 @@ public class TrailsActivity extends AppCompatActivity
                            // Log.d("mylogr", "I'm fshere");
                             t.setMap(mMap);
                             trailsMenu.add(Menu.NONE, t.getId(), Menu.NONE, t.getName());
-                        }
+                            trailsMenu.getItem(t.getId()-1).setIcon(R.drawable.map)
+;                        }
 
                         //custom infowindow set up (check newly created class)
                         CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerArtwork);
@@ -300,7 +306,10 @@ public class TrailsActivity extends AppCompatActivity
                     if (trailPolyline != null) trailPolyline.setVisible(false);
 
                     // Show selected trail's markers and polyline
+                    //currentTrail = trails.get(menuItem.getItemId() - 1);
                     currentTrail = trails.get(menuItem.getItemId() - 1);
+                    Log.d("mylogrtrail", currentTrail.getName());
+
                     showMarkers(currentTrail, true);
                     //currentTrail.zoomIn();
                     currentTrail.showTrail(TrailsActivity.this);
@@ -334,6 +343,7 @@ public class TrailsActivity extends AppCompatActivity
     // TODO: 26/04/2020 Fix for when no trail is selected (all artworks view)
     private void showDisableCurrentLocation() {
         //hide any open infowindows
+        shouldShowLoc = true;
         if (currentTrail != null) {
             for (TrailArtwork ta : currentTrail.getTrailArtworks()) {
                 Marker key = markerArtwork.inverse().get(ta.getArtwork());
@@ -477,6 +487,7 @@ public class TrailsActivity extends AppCompatActivity
         targets.clear();
 
         Hashtable<Integer, Artwork> rankArtwork = t.getRankArtwork();
+        Log.d("showmarkers", t.getArtworks().get(0).getName());
 
         for (int i = 1; i <= rankArtwork.size(); i++) {
             Marker m = markerArtwork.inverse().get(rankArtwork.get(i));
@@ -620,33 +631,50 @@ public class TrailsActivity extends AppCompatActivity
         @Override
         public void onReceive(Context context, Intent intent) {
             int number = intent.getIntExtra("number", 0);
-            if (intent.getAction().equals("ACT_LOC") && number != counter) {
+            if (intent.getAction().equals("ACT_LOC") && number != counter && shouldShowLoc) {
 
                 counter = number;
                 double latitude = intent.getDoubleExtra("latitude", 0f);
                 double longitude = intent.getDoubleExtra("longitude", 0f);
                 LatLng latLng = new LatLng(latitude, longitude);
+                Location currentLocation = new Location("");
+                currentLocation.setLongitude(longitude);
+                currentLocation.setLatitude(latitude);
 
-                if (currentLocationMarker != null && locationPolyline != null) {
-                    Log.d("mylogr", "zoomnotcheck2");
-
-                    //locationPolyline.setVisible(false);
-                    //locationPolyline.remove();
-                    setCurrentLocationMarker(latLng);
-                    if (currentTrail != null)
-                        currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-
+                if (currentTrail != null && !currentTrail.shouldGetDirections(currentLocation)) {
+                    shouldShowLoc = false;
+                    stopService();
+                    AlertDialog alertDialog = new AlertDialog.Builder(TrailsActivity.this).create();
+                    alertDialog.setTitle("Alert");
+                    alertDialog.setMessage("You are located far away from the trail");
+                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                            new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    alertDialog.dismiss();
+                                    //dialog.cancel();
+                                   // alertDialog.cancel();
+                                }
+                            });
+                    alertDialog.show();
                 } else {
-                    Log.d("mylogr", "setcurrent");
-                    setCurrentLocationMarker(latLng);
-                    Log.d("mylogr", "zoomnotcheck");
-                    if (currentTrail != null) {
-                        currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-                        currentTrail.zoomFit(currentLocationMarker);
-                    }
-                    else{
-                        Log.d("mylogr", "zoomnot");
-                        zoomHomeWithLoc(currentLocationMarker.getPosition());
+
+                    if (currentLocationMarker != null && locationPolyline != null) {
+                        Log.d("mylogr", "zoomnotcheck2");
+                        setCurrentLocationMarker(latLng);
+                        if (currentTrail != null)
+                            currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+
+                    } else {
+                        Log.d("mylogr", "setcurrent");
+                        setCurrentLocationMarker(latLng);
+                        Log.d("mylogr", "zoomnotcheck");
+                        if (currentTrail != null) {
+                            currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
+                            currentTrail.zoomFit(currentLocationMarker);
+                        } else {
+                            Log.d("mylogr", "zoomnot");
+                            zoomHomeWithLoc(currentLocationMarker.getPosition());
+                        }
                     }
                 }
             }

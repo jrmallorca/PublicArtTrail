@@ -1,6 +1,7 @@
 package com.publicarttrail.googlemapspractice.pojo;
 
 import android.content.Context;
+import android.location.Location;
 import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -86,8 +87,10 @@ public class Trail {
     private void initRankArtwork() {
         if (rankArtwork == null) {
             rankArtwork = new Hashtable<>();
-            for (TrailArtwork ta : trailArtworks)
+            for (TrailArtwork ta : trailArtworks) {
                 rankArtwork.put(ta.getArtworkRank(), ta.getArtwork());
+                Log.d("logrrank1:", Integer.toString(ta.getArtworkRank()));
+            }
         }
     }
 
@@ -216,4 +219,18 @@ public class Trail {
                     "walking"),
                          "walking");
     }
+
+    public boolean shouldGetDirections(Location currentLocation){
+        for(Artwork artwork:getArtworks()){
+            Location location = new Location("");
+            location.setLatitude(artwork.getLatLng().latitude);
+            location.setLongitude(artwork.getLatLng().longitude);
+            float distance = currentLocation.distanceTo(location);
+            Log.d("mylogrdistance", String.valueOf(distance));
+
+            if (currentLocation.distanceTo(location)<=3000) return true;
+        }
+        return false;
+    }
+
 }

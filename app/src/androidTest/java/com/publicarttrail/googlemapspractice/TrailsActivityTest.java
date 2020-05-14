@@ -57,6 +57,7 @@ import java.util.List;
 
 import static androidx.test.espresso.Espresso.onData;
 import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -162,6 +163,12 @@ public class TrailsActivityTest {
                 startPos, 20, 0);
     }
 
+    public void setUpFarStillUser(){
+        LatLng startPos = new LatLng(51.4700, -0.4543);
+        startUpdates(mActivityRule.getActivity(), new Handler(Looper.getMainLooper()),
+                startPos, 20, 0);
+    }
+
 
 
 
@@ -226,7 +233,7 @@ public class TrailsActivityTest {
         Rect rects2 = currentLocation2.getVisibleBounds(); //get position on screen
         stopThread = true; //this will stop the thread thats mocking location so that next tests arent affected
         Assert.assertNotEquals(rects1, rects2); //confirm both positions are not equal
-        currentLocation.click(); //click button to go back to normal screen
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click());//click button to go back to normal screen
 
 
     }
@@ -250,7 +257,29 @@ public class TrailsActivityTest {
         Rect rects2 = currentLocation2.getVisibleBounds(); //get position on screen
         stopThread = true; //this will stop the thread thats mocking location so that next tests arent affected
         Assert.assertEquals(rects1, rects2); //confirm both positions are equal
-        currentLocation.click(); //click button to go back to normal screen
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click());//click button to go back to normal screen
+
+    }
+
+    @Test
+    public void currentLocationForFarStillUser()throws UiObjectNotFoundException, InterruptedException{
+        setUpFarStillUser(); //set up mock location
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click());
+
+        UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject currentLocation = mDevice.
+                findObject(new UiSelector().descriptionContains("You are here!")); //find current loc marker
+        currentLocation.click(); //make sure marker is present (there is no other way to check)
+        Rect rects1 = currentLocation.getVisibleBounds(); //get position on screen
+        Thread.sleep(3000);
+
+        UiDevice mDevice2 = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject currentLocation2 = mDevice2.
+                findObject(new UiSelector().descriptionContains("You are here!"));//find current loc marker after 3s
+        Rect rects2 = currentLocation2.getVisibleBounds(); //get position on screen
+        stopThread = true; //this will stop the thread thats mocking location so that next tests arent affected
+        Assert.assertEquals(rects1, rects2); //confirm both positions are equal
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click());//click button to go back to normal screen
 
     }
 
@@ -370,6 +399,19 @@ public class TrailsActivityTest {
     public void ttbcrailCurrentLocationForStillUser() throws InterruptedException, UiObjectNotFoundException {
         selectTrail();
         currentLocationForStillUser();
+    }
+
+    @Test
+    public void ttbcrailCurrentLocationForFarStillUser() throws InterruptedException, UiObjectNotFoundException {
+        selectTrail();
+        setUpFarStillUser(); //set up mock location
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click());
+        Thread.sleep(2000); //wait for view to change
+        onView(withText("Alert")).check(matches(isDisplayed()));
+        onView(withText("OK")).perform(ViewActions.click());
+        onView(withText("Alert")).check(doesNotExist());
+        checkView();
+
     }
 
     @Test
