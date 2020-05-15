@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 
 import androidx.annotation.NonNull;
@@ -131,7 +132,7 @@ public class TrailsActivity extends AppCompatActivity
 
         // Create the buttons
         createButtons();
-        
+
 
         EventBus.getDefault().register(this);
         Log.d("debugon", "createcalled");
@@ -177,14 +178,8 @@ public class TrailsActivity extends AppCompatActivity
         Log.d("debugon", "destroycalled");
     }
 
-    // When the map is ready, add markers for all trails, sets current location, and creates a listener
-    // for any marker selection
-    // TODO: 27/04/2020 Possibly save the default marker in resources and just load numbers from URL?
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
-        Menu trailsMenu = navigationView.getMenu().getItem(2).getSubMenu();
 
+    public void setMarkersAndListeners(GoogleMap map, Menu trailsMenu ){
         for (int i = 0; i < artworks.size(); i++) {
             int finalI = i;
             targets.add(new Target() {
@@ -192,35 +187,34 @@ public class TrailsActivity extends AppCompatActivity
                 public void onBitmapLoaded(Bitmap bitmap, Picasso.LoadedFrom from) {
                     Artwork a = artworks.get(finalI);
 
-                    Marker m = mMap.addMarker(new MarkerOptions()
+                    Marker m = map.addMarker(new MarkerOptions()
                             .position(a.getLatLng())
                             .title(a.getName())
                             .snippet(a.getCreator())
                             .icon(BitmapDescriptorFactory.fromBitmap(bitmap)));
 
                     markerArtwork.put(m, a);
-                    latLngBuilder.include(m.getPosition());
+                    //latLngBuilder.include(m.getPosition());
 
                     // Once all icons are set...
                     if (markerArtwork.size() == artworks.size()) {
                         // Attribute that knows dimensions of screen (Used so global map won't appear at beginning)
                         Log.d("bound:3", "onmapready");
-                        drawer.getViewTreeObserver().addOnGlobalLayoutListener(() -> check());
 
 
                         // Set map, add menu item for each trail
                         for (Trail t : trails) {
-                           // Log.d("mylogr", "I'm fshere");
-                            t.setMap(mMap);
+                            // Log.d("mylogr", "I'm fshere");
+                            t.setMap(map);
                             trailsMenu.add(Menu.NONE, t.getId(), Menu.NONE, t.getName());
-                            trailsMenu.getItem(t.getId()-1).setIcon(R.drawable.map)
-;                        }
+                            trailsMenu.getItem(t.getId()-1).setIcon(R.drawable.map);
+                        }
 
                         //custom infowindow set up (check newly created class)
                         CustomInfoWindowAdapter adapter = new CustomInfoWindowAdapter(TrailsActivity.this, markerArtwork);
 
                         //infowindows in this map will use format set in CustomInfoWindowAdapter
-                        mMap.setInfoWindowAdapter(adapter);
+                        map.setInfoWindowAdapter(adapter);
 
                         //set infowindow clicklistener
                         infoWindowListener();
@@ -244,10 +238,24 @@ public class TrailsActivity extends AppCompatActivity
 
             Picasso.get().load(getIconURL("red", "")).resize(50, 0).into(targets.get(i));
         }
+    }
+
+    // When the map is ready, add markers for all trails, sets current location, and creates a listener
+    // for any marker selection
+    // TODO: 27/04/2020 Possibly save the default marker in resources and just load numbers from URL?
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        Log.d("supportlogr", "onmapready");
+
+        mMap = googleMap;
+        Menu trailsMenu = navigationView.getMenu().getItem(2).getSubMenu();
+        setMarkersAndListeners(mMap, trailsMenu);
+
+
         mMap.setOnMarkerClickListener(this);
     }
 
-    void check() {
+    void zoom() {
         Log.d("bound:3", "check");
         if (currentTrail == null) zoomHome();
         else currentTrail.zoomIn();
@@ -311,8 +319,8 @@ public class TrailsActivity extends AppCompatActivity
                     Log.d("mylogrtrail", currentTrail.getName());
 
                     showMarkers(currentTrail, true);
-                    //currentTrail.zoomIn();
                     currentTrail.showTrail(TrailsActivity.this);
+                    currentTrail.zoomIn();
 
                     setTitle(currentTrail.getName());
                 }
@@ -456,7 +464,27 @@ public class TrailsActivity extends AppCompatActivity
             Log.d("eventbus22", "check");
             SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
+            supportMapFragment.getView().getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    for(Trail trail:trails){
+                        for(Artwork artwork:trail.getArtworks()){
+                            latLngBuilder.include(artwork.getLatLng());
+                        }
+                    }
+                    int padding = 70; // Offset from edges of the map in pixels
+                    LatLngBounds bounds = latLngBuilder.build();
+                    Log.d("bound:3", bounds.toString());
+                    Log.d("bound:3", "hello");
+                    CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+                    mMap.moveCamera(cu);
+
+                    zoom();
+                }
+            });
             supportMapFragment.getMapAsync(TrailsActivity.this);
+            Log.d("supportlogr", "trailreceive");
+
         }
     }
 
@@ -474,6 +502,8 @@ public class TrailsActivity extends AppCompatActivity
             SupportMapFragment supportMapFragment = (SupportMapFragment) getSupportFragmentManager()
                     .findFragmentById(R.id.map);
             supportMapFragment.getMapAsync(TrailsActivity.this);
+            Log.d("supportlogr", "artreceive");
+
         }
     }
 
