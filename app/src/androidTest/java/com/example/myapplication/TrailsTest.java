@@ -9,6 +9,7 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 
 import com.google.android.gms.maps.model.LatLng;
+import com.publicarttrail.googlemapspractice.BuildConfig;
 import com.publicarttrail.googlemapspractice.R;
 import com.publicarttrail.googlemapspractice.TrailsActivity;
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
@@ -83,7 +84,7 @@ public class TrailsTest  {
 
         String url = trail.getURLTrailPath(origin, destination, directionMode, waypoints);
 
-        String check = "https://maps.googleapis.com/maps/api/directions/json?origin=51.462773,-2.601686&destination=51.458614,-2.602028&waypoints=51.4578,-2.601779&mode=walking&key=AIzaSyBg2CwABbCb-ql9-_YtXA4mGDDI7X1nuU8";
+        String check = "https://maps.googleapis.com/maps/api/directions/json?origin=51.462773,-2.601686&destination=51.458614,-2.602028&waypoints=51.4578,-2.601779&mode=walking&key=" + BuildConfig.GOOGLE_MAPS_DIRECTION_KEY;
         assertEquals("Not equal", check, url);
         //The message here is displayed iff the test fails
     }
@@ -97,7 +98,7 @@ public class TrailsTest  {
 
         String url = trail.getURLUserPath(origin, destination, directionMode);
 
-        String check = "https://maps.googleapis.com/maps/api/directions/json?origin=51.462773,-2.601686&destination=51.458614,-2.602028&mode=walking&key=AIzaSyBg2CwABbCb-ql9-_YtXA4mGDDI7X1nuU8";
+        String check = "https://maps.googleapis.com/maps/api/directions/json?origin=51.462773,-2.601686&destination=51.458614,-2.602028&mode=walking&key=" + BuildConfig.GOOGLE_MAPS_DIRECTION_KEY;
         assertEquals("Not equal", check, url);
         //The message here is displayed iff the test fails
 

@@ -54,10 +54,18 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            buildConfigField "String", "GOOGLE_MAPS_KEY", GOOGLE_MAPS_KEY
+            resValue "string", "GOOGLE_MAPS_KEY", GOOGLE_MAPS_KEY
+            buildConfigField "String", "GOOGLE_MAPS_DIRECTION_KEY", GOOGLE_MAPS_DIRECTION_KEY
+            resValue "string", "GOOGLE_MAPS_DIRECTION_KEY", GOOGLE_MAPS_DIRECTION_KEY
         }
 
         debug{
             testCoverageEnabled true
+            buildConfigField "String", "GOOGLE_MAPS_KEY", GOOGLE_MAPS_KEY
+            resValue "string", "GOOGLE_MAPS_KEY", GOOGLE_MAPS_KEY
+            buildConfigField "String", "GOOGLE_MAPS_DIRECTION_KEY", GOOGLE_MAPS_DIRECTION_KEY
+            resValue "string", "GOOGLE_MAPS_DIRECTION_KEY", GOOGLE_MAPS_DIRECTION_KEY
         }
     }
     compileOptions {
