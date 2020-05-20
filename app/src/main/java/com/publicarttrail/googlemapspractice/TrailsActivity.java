@@ -695,7 +695,7 @@ public class TrailsActivity extends AppCompatActivity
                     stopService();
                     AlertDialog alertDialog = new AlertDialog.Builder(TrailsActivity.this).create();
                     alertDialog.setTitle("Alert");
-                    alertDialog.setMessage("You are located far away from the trail");
+                    alertDialog.setMessage("You are located too far away from the trail for your location to be visible");
                     alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog, int which) {

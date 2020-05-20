@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Public Art Trail</string>
+    <string name="app_name">Bristol Public Art</string>
     <string name="title_activity_maps">Map</string>
 
     <!-- Useful for screen readers (E.g. blind people who need to know what's happening on screen) -->
@@ -9,8 +9,8 @@
 
     <!-- Navigation menu -->
     <string name="nav_home">Home</string>
-    <string name="nav_trails">Trails Map View</string>
-    <string name="nav_artworks">Trails List View</string>
+    <string name="nav_trails">Art Trails</string>
+    <string name="nav_artworks">Artworks List</string>
 
     <string name="public_art_trail">Public Art Trail</string>
     <string name="title_activity_new">Map</string>
