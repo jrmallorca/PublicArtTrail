@@ -41,6 +41,7 @@ import com.publicarttrail.googlemapspractice.idlingResource.IdlingResourceSleepe
 import com.publicarttrail.googlemapspractice.pojo.Artwork;
 import com.publicarttrail.googlemapspractice.pojo.Trail;
 import com.publicarttrail.googlemapspractice.pojo.TrailArtwork;
+import com.squareup.picasso.Target;
 
 import org.greenrobot.eventbus.EventBus;
 import org.hamcrest.Matchers;
@@ -69,6 +70,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withText;
 public class TrailsActivityTest {
 
     static volatile boolean stopThread = false;
+    private List<Target> targets = new ArrayList<>(); // Assigns marker icon from Picasso
 
     //before launching, setup an event bus
     @Rule
@@ -82,27 +84,29 @@ public class TrailsActivityTest {
     };
 
 
-
-
-
-
     public void setUp(){
         Artwork artwork1 = new Artwork(1, "Tyndall Gate", "John",
                 "DescriptionTyndall", 51.458530, -2.603452, convert(R.drawable.error_image));
         Artwork artwork2 = new Artwork(2, "Follow Me", "??",
                 "DescriptionFollow", 51.457876, -2.602892, convert(R.drawable.follow_me));
-        Artwork artwork3 = new Artwork(1, "Goldney Hall", "??",
+        Artwork artwork3 = new Artwork(3, "Hollow", "??",
+                "DescriptionHollow", 51.457470, -2.600915, convert(R.drawable.follow_me));
+
+        Artwork artwork4 = new Artwork(1, "Goldney Hall", "??",
                 "DescriptionGold", 51.452644, -2.615080, convert(R.drawable.error_image));
         TrailArtwork trailArtwork1 = new TrailArtwork(artwork1, 1);
         TrailArtwork trailArtwork2 = new TrailArtwork(artwork2, 2);
-        TrailArtwork trailArtwork3 = new TrailArtwork(artwork3, 1);
+        TrailArtwork trailArtwork3 = new TrailArtwork(artwork3, 3);
+        TrailArtwork trailArtwork4 = new TrailArtwork(artwork4, 1);
+
 
         List<TrailArtwork> trailArtworks1 = new ArrayList<>();
         List<TrailArtwork> trailArtworks2 = new ArrayList<>();
 
         trailArtworks1.add(trailArtwork1);
         trailArtworks1.add(trailArtwork2);
-        trailArtworks2.add(trailArtwork3);
+        trailArtworks1.add(trailArtwork3);
+        trailArtworks2.add(trailArtwork4);
         Trail trail1 = new Trail(1, "RFG", trailArtworks1);
         Trail trail2 = new Trail(2, "Goldney", trailArtworks2);
         List<Trail> trailList = new ArrayList<>();
@@ -112,6 +116,7 @@ public class TrailsActivityTest {
         artworks.add(artwork1);
         artworks.add(artwork2);
         artworks.add(artwork3);
+        artworks.add(artwork4);
         TrailAcquiredEvent trailAcquiredEvent = new TrailAcquiredEvent(trailList);
         EventBus.getDefault().postSticky(trailAcquiredEvent);
         ArtworkAcquiredEvent artworkAcquiredEvent = new ArtworkAcquiredEvent(artworks);
@@ -142,6 +147,34 @@ public class TrailsActivityTest {
         Log.d("encode64", imageString);
         return imageString;
     }
+
+    public Boolean isNear(LatLng center, LatLng test){
+
+        // centerloc.
+        boolean isWithin100m = distanceTo(center, test) < 100;
+        return isWithin100m;
+    }
+
+    public float distanceTo(LatLng center, LatLng test){
+
+        Log.d("mylogrlatlng", center.toString());
+
+        Location centerloc = new Location("");
+        centerloc.setLatitude(center.latitude);
+        centerloc.setLongitude(center.longitude);
+
+        Log.d("mylogrlatlng", test.toString());
+        Location testLoc = new Location("");
+        testLoc.setLatitude(test.latitude);
+        testLoc.setLongitude(test.longitude);
+
+
+        float distanceInMeters = testLoc.distanceTo(centerloc);
+        Log.d("mylogrlatlng", Float.toString(distanceInMeters));
+
+        return distanceInMeters;
+    }
+
 
     //function for mocking moving user
     public void setUpMovingUser(){
@@ -194,8 +227,15 @@ public class TrailsActivityTest {
     @Test
     public void checkMarker3() throws UiObjectNotFoundException, InterruptedException {
         UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        UiObject marker3 = mDevice.findObject(new UiSelector().descriptionContains("Goldney Hall"));
+        UiObject marker3 = mDevice.findObject(new UiSelector().descriptionContains("Hollow"));
         marker3.click();
+    }
+
+    @Test
+    public void checkMarker4() throws UiObjectNotFoundException, InterruptedException {
+        UiDevice mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+        UiObject marker4 = mDevice.findObject(new UiSelector().descriptionContains("Goldney Hall"));
+        marker4.click();
     }
 
 
@@ -354,6 +394,7 @@ public class TrailsActivityTest {
     public void trailView() throws InterruptedException {
         selectTrail();
         checkView();
+
     }
 
     @Test
@@ -368,10 +409,63 @@ public class TrailsActivityTest {
         checkMarker2();
     }
 
-    @Test(expected = UiObjectNotFoundException.class)
+    @Test
     public void trailCheckMarker3() throws InterruptedException, UiObjectNotFoundException {
         selectTrail();
         checkMarker3();
+    }
+
+    @Test
+    public void trailCheckTrailPath() throws InterruptedException {
+        selectTrail();
+
+        Trail trail = mActivityRule.getActivity().getTrails().get(0);
+        List<LatLng> list = trail.trailPath.getPoints();
+
+        Assert.assertTrue(isNear(trail.getTrailArtworks().get(0).getArtwork().getLatLng(), list.get(0)));
+        Assert.assertTrue(isNear(trail.getTrailArtworks().get(2).getArtwork().getLatLng(), list.get(list.size()-1)));
+        boolean value = false;
+        double minimum = Double.POSITIVE_INFINITY;
+        for(LatLng latLng:list){
+            float distance = distanceTo(trail.getTrailArtworks().get(1).getArtwork().getLatLng(), latLng);
+            if(distance<minimum){
+                minimum = distance;
+            }
+        }
+        if (minimum<100) value =true;
+        Assert.assertTrue(value);
+    }
+
+    @Test(expected = UiObjectNotFoundException.class)
+    public void trailCheckMarker4() throws InterruptedException, UiObjectNotFoundException {
+        selectTrail();
+        checkMarker4();
+    }
+
+    @Test
+    public void trailCurrentLocationDirections() throws InterruptedException, UiObjectNotFoundException {
+        selectTrail();
+        //currentLocationForMovingUser();
+        setUpMovingUser(); //set up mock location
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click()); //click button
+        Thread.sleep(2000);
+
+        Trail trail1 = mActivityRule.getActivity().getTrails().get(0);
+        LatLng current1 = mActivityRule.getActivity().getCurrentLoc();
+        List<LatLng> list1 = trail1.locationPath.getPoints();
+        Assert.assertTrue(isNear(current1, list1.get(0)));
+        Assert.assertTrue(isNear(trail1.getTrailArtworks().get(0).getArtwork().getLatLng(), list1.get(list1.size()-1)));
+
+        Thread.sleep(2000);
+
+        Trail trail2 = mActivityRule.getActivity().getTrails().get(0);
+        LatLng current2 = mActivityRule.getActivity().getCurrentLoc();
+        List<LatLng> list2 = trail2.locationPath.getPoints();
+        Assert.assertTrue(isNear(current2, list2.get(0)));
+        Assert.assertTrue(isNear(trail2.getTrailArtworks().get(0).getArtwork().getLatLng(), list2.get(list2.size()-1)));
+
+        stopThread = true; //this will stop the thread thats mocking location so that next tests arent affected
+        onView(withId(R.id.currentLocation)).perform(ViewActions.click());//click button to go back to normal screen
     }
 
     @Test
@@ -405,9 +499,6 @@ public class TrailsActivityTest {
         selectTrail();
         infoWindow();
     }
-
-
-
 
 
 
@@ -465,4 +556,3 @@ public class TrailsActivityTest {
 
 
 }
-

@@ -10,6 +10,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.publicarttrail.googlemapspractice.directionhelpers.FetchURL;
 
 import java.util.ArrayList;
@@ -27,6 +28,8 @@ public class Trail {
     // More complex attributes for methods
     private GoogleMap map;
     private LatLngBounds.Builder builder;
+    public PolylineOptions trailPath;
+    public PolylineOptions locationPath;
 
 
     private Hashtable<Integer, Artwork> rankArtwork;
@@ -113,7 +116,7 @@ public class Trail {
         int padding = 70; // Offset from edges of the map in pixels
         LatLngBounds bounds = builder.build();
 
-            Log.d("bound:",  bounds.toString());
+        Log.d("bound:",  bounds.toString());
         Log.d("bound:",  builder.toString());
 
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
@@ -191,6 +194,7 @@ public class Trail {
     // Create array for waypoints
     private List<LatLng> getWaypoints() {
         List<LatLng> wayPoints = new ArrayList<>();
+        if(rankArtwork==null) initRankArtwork();
 
         for (int i = 1; i <= trailArtworks.size(); i++)
             wayPoints.add(Objects.requireNonNull(rankArtwork.get(i)).getLatLng());
@@ -203,21 +207,23 @@ public class Trail {
 
         new FetchURL(context)
                 .execute(getURLTrailPath(Objects.requireNonNull(rankArtwork.get(1)).getLatLng(),
-                                Objects.requireNonNull(rankArtwork.get(rankArtwork.size())).getLatLng(),
-                   "walking",
-                                getWaypoints()),
-                         "walking");
+                        Objects.requireNonNull(rankArtwork.get(rankArtwork.size())).getLatLng(),
+                        "walking",
+                        getWaypoints()),
+                        "walking");
     }
 
     // --- Location methods ---
 
     // Get direction from current location to trail
     public void getDirection(Context context, LatLng currentLocation) {
+        if(rankArtwork==null) initRankArtwork();
+
         new FetchURL(context)
                 .execute(getURLUserPath(currentLocation,
-                                 Objects.requireNonNull(rankArtwork.get(1)).getLatLng(),
-                    "walking"),
-                         "walking");
+                        Objects.requireNonNull(rankArtwork.get(1)).getLatLng(),
+                        "walking"),
+                        "walking");
     }
 
     public boolean shouldGetDirections(Location currentLocation){

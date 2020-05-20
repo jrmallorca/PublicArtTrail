@@ -76,6 +76,7 @@ public class TrailsActivity extends AppCompatActivity
     private static final int Request_Code = 101;
     private Button currentLocationButton;
     private Marker currentLocationMarker = null;
+    private LatLng currentLocLatLng = null;
     private Boolean isCurrentLocSet;
     private Polyline trailPolyline;
     private Polyline locationPolyline;
@@ -92,7 +93,7 @@ public class TrailsActivity extends AppCompatActivity
 
     private Marker openInfoWindowMarker = null;
 
-    private BiMap<Marker, Artwork> markerArtwork = HashBiMap.create(); // Two-way hashtable
+    public BiMap<Marker, Artwork> markerArtwork = HashBiMap.create(); // Two-way hashtable
     private LatLngBounds.Builder latLngBuilder = new LatLngBounds.Builder(); // Builds a boundary based on the set of LatLngs provided
     private List<Target> targets = new ArrayList<>(); // Assigns marker icon from Picasso
 
@@ -144,6 +145,14 @@ public class TrailsActivity extends AppCompatActivity
         super.onStart();
         //EventBus.getDefault().register(this);
         Log.d("debugon", "startcalled");
+    }
+
+    public List<Trail> getTrails(){
+        return trails;
+    }
+
+    public LatLng getCurrentLoc(){
+        return currentLocLatLng;
     }
 
 
@@ -278,6 +287,7 @@ public class TrailsActivity extends AppCompatActivity
                         currentLocationMarker.setVisible(false);
                         currentLocationMarker.remove();
                         currentLocationMarker = null;
+                        currentLocLatLng = null;
                         if(currentTrail!=null) locationPolyline.setVisible(false);
                     }
                     if (trailPolyline != null) trailPolyline.setVisible(false);
@@ -309,6 +319,7 @@ public class TrailsActivity extends AppCompatActivity
                         currentLocationMarker.setVisible(false);
                         currentLocationMarker.remove();
                         currentLocationMarker = null;
+                        currentLocLatLng = null;
                         if(currentTrail!=null) locationPolyline.setVisible(false);
                     }
                     if (trailPolyline != null) trailPolyline.setVisible(false);
@@ -370,6 +381,7 @@ public class TrailsActivity extends AppCompatActivity
             currentLocationMarker.setVisible(false);
             currentLocationMarker.remove();
             currentLocationMarker = null;
+            currentLocLatLng = null;
             Log.d("mylogr", "marker removed");
 
             if(currentTrail!=null) {
@@ -378,6 +390,7 @@ public class TrailsActivity extends AppCompatActivity
                 locationPolyline.setVisible(false);
                 locationPolyline.remove();
                 locationPolyline = null;
+                currentTrail.locationPath = null;
                 // locationPolyline = null;
                 currentTrail.zoomIn();
             }
@@ -601,11 +614,13 @@ public class TrailsActivity extends AppCompatActivity
         if(currentLocationMarker!=null){
             currentLocationMarker.setVisible(false);
             currentLocationMarker.remove();
-            currentLocationMarker = null;}
+            currentLocationMarker = null;
+            currentLocLatLng = null;}
         isCurrentLocSet = true;
         MarkerOptions markerOptions = new MarkerOptions().position(latLng).title("You are here!")
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
         currentLocationMarker = mMap.addMarker(markerOptions);
+        currentLocLatLng = latLng;
         Log.d("mylogr", "setcurrent2");
 
         currentLocationMarker.setVisible(true);
@@ -633,21 +648,23 @@ public class TrailsActivity extends AppCompatActivity
             trailPolyline = mMap.addPolyline(polylineOptions);
             trailPolyline.setColor(Color.BLUE);
             trailPolyline.setPattern(pattern);
+            currentTrail.trailPath = polylineOptions;
             isPolylineForTrail = false;
         } else {
             if(isCurrentLocSet){
-            Log.d("mylogr", "check");
-            if (locationPolyline != null) {
-                Log.d("mylogr", "check1");
+                Log.d("mylogr", "check");
+                if (locationPolyline != null) {
+                    Log.d("mylogr", "check1");
 
-                locationPolyline.setPoints(polylineOptions.getPoints());
-                locationPolyline.setVisible(true);
-            } else {
-                Log.d("mylogr", "check2");
-                locationPolyline = mMap.addPolyline(polylineOptions);
-                locationPolyline.setColor(Color.RED);
-                locationPolyline.setPattern(pattern);
-            }}
+                    locationPolyline.setPoints(polylineOptions.getPoints());
+                    locationPolyline.setVisible(true);
+                } else {
+                    Log.d("mylogr", "check2");
+                    locationPolyline = mMap.addPolyline(polylineOptions);
+                    locationPolyline.setColor(Color.RED);
+                    locationPolyline.setPattern(pattern);
+                    currentTrail.locationPath = polylineOptions;
+                }}
 
             //if (!isCurrentLocSet) locationPolyline.setVisible(false);
             //askingForDirection = false;
@@ -660,6 +677,8 @@ public class TrailsActivity extends AppCompatActivity
 
         @Override
         public void onReceive(Context context, Intent intent) {
+            Log.d("mylogr", "click4");
+
             int number = intent.getIntExtra("number", 0);
             if (intent.getAction().equals("ACT_LOC") && number != counter && shouldShowLoc) {
 
@@ -682,33 +701,46 @@ public class TrailsActivity extends AppCompatActivity
                                 public void onClick(DialogInterface dialog, int which) {
                                     alertDialog.dismiss();
                                     //dialog.cancel();
-                                   // alertDialog.cancel();
+                                    // alertDialog.cancel();
                                 }
                             });
                     alertDialog.show();
-                } else {
+                }
+                else{
 
-                    if (currentLocationMarker != null && locationPolyline != null) {
-                        Log.d("mylogr", "zoomnotcheck2");
-                        setCurrentLocationMarker(latLng);
-                        if (currentTrail != null)
+                    if(currentTrail!=null) {
+
+                        if(currentLocationMarker!=null && locationPolyline!=null){
+                            Log.d("mylogr", "zoomnotcheck2");
+                            setCurrentLocationMarker(latLng);
                             currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
-
-                    } else {
-                        Log.d("mylogr", "setcurrent");
-                        setCurrentLocationMarker(latLng);
-                        Log.d("mylogr", "zoomnotcheck");
-                        if (currentTrail != null) {
+                        }
+                        else{
+                            Log.d("mylogr", "setcurrent");
+                            setCurrentLocationMarker(latLng);
+                            Log.d("mylogr", "zoomnotcheck");
                             currentTrail.getDirection(TrailsActivity.this, currentLocationMarker.getPosition());
                             currentTrail.zoomFit(currentLocationMarker);
-                        } else {
+                        }
+                    }
+
+                    else {
+                        if(currentLocationMarker!=null) {
+                            Log.d("mylogr", "zoomnotcheck2");
+                            setCurrentLocationMarker(latLng);
+                        }
+
+                        else{
+                            Log.d("mylogr", "setcurrent");
+                            setCurrentLocationMarker(latLng);
+                            Log.d("mylogr", "zoomnotcheck");
                             Log.d("mylogr", "zoomnot");
                             zoomHomeWithLoc(currentLocationMarker.getPosition());
                         }
                     }
+
                 }
             }
         }
     }
 }
-
