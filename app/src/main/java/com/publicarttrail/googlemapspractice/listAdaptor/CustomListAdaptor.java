@@ -34,8 +34,7 @@ public class CustomListAdaptor extends RecyclerView.Adapter<ViewHolder> {
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         View listItem= layoutInflater.inflate(R.layout.list_item, parent, false);
-        ViewHolder viewHolder = new ViewHolder(listItem);
-        return viewHolder;
+        return new ViewHolder(listItem);
     }
 
     @Override
@@ -44,23 +43,13 @@ public class CustomListAdaptor extends RecyclerView.Adapter<ViewHolder> {
         holder.title.setText(artwork.getName());
         holder.artist.setText(artwork.getCreator());
         holder.imageView.setImageBitmap(artwork.getBitmap());
-        holder.next.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                EventBus.getDefault()
-                        .postSticky(new ArtworkAcquiredEvent(Collections.singletonList(artwork)));
+        holder.next.setOnClickListener(v -> {
+            EventBus.getDefault()
+                    .postSticky(new ArtworkAcquiredEvent(Collections.singletonList(artwork)));
 
-                Intent info = new Intent(context, InfoPage.class);
-                context.startActivity(info);
-            }
+            Intent info = new Intent(context, InfoPage.class);
+            context.startActivity(info);
         });
-        /*holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Toast.makeText(view.getContext(),"click on item: "+myListData.getDescription(),Toast.LENGTH_LONG).show();
-            }
-        });*/
-
     }
 
     @Override

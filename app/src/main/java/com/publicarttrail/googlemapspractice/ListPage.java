@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ListPage extends AppCompatActivity {
-
     RecyclerView recyclerView;
     Spinner mySpinner;
     ArrayList<Trail>trails = new ArrayList<>();
@@ -35,10 +34,9 @@ public class ListPage extends AppCompatActivity {
     CustomListAdaptor adapter;
     Map<String, List<Artwork>> artworkMap = new HashMap<>();
 
-
-    private ArrayList<Artwork> getArtworks(ArrayList<Trail>trails){
+    private ArrayList<Artwork> getArtworks(ArrayList<Trail>trails) {
         ArrayList<Artwork> artworks = new ArrayList<>();
-        for (Trail trail: trails){
+        for (Trail trail: trails) {
             for(Artwork trailArtwork:trail.getArtworks()) {
                 addIfNotPresent(artworks, trailArtwork);
             }
@@ -46,17 +44,16 @@ public class ListPage extends AppCompatActivity {
         return artworks;
     }
 
-    private void addIfNotPresent(ArrayList<Artwork> artworks, Artwork artworkToBeAdded){
-        for(Artwork artwork:artworks){
+    private void addIfNotPresent(ArrayList<Artwork> artworks, Artwork artworkToBeAdded) {
+        for (Artwork artwork:artworks)
             if (artwork.getName().equals(artworkToBeAdded.getName())) return;
-        }
+
         artworks.add(artworkToBeAdded);
     }
 
-    private void initializeViews(){
-
+    private void initializeViews() {
         itemSelections.add("All");
-        for(Trail trail:trails){
+        for (Trail trail : trails) {
             itemSelections.add(trail.getName());
             artworkMap.put(trail.getName(), trail.getArtworks());
         }
@@ -67,7 +64,6 @@ public class ListPage extends AppCompatActivity {
         recyclerView.setAdapter(new CustomListAdaptor(getArtworks(trails), ListPage.this));
         recyclerView.setHasFixedSize(false);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
 
         //spinner selection events
         mySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -88,15 +84,15 @@ public class ListPage extends AppCompatActivity {
 
     private void getSelectedCategoryData(int categoryID) {
         if(categoryID == 0) //All
-        {
             adapter = new CustomListAdaptor(getArtworks(trails), ListPage.this);
-        }else{
+        else {
             //arraylist to hold selected cosmic bodies
             //filter by id
             ArrayList<Artwork> artworks = new ArrayList<>(Objects.requireNonNull(artworkMap.get((itemSelections.get(categoryID)))));
             //instatiate adapter a
             adapter = new CustomListAdaptor(artworks, ListPage.this);
         }
+
         //set the adapter to GridView
         recyclerView.setAdapter(adapter);
     }
@@ -126,18 +122,12 @@ public class ListPage extends AppCompatActivity {
     public void onPause(){
         super.onPause();
         EventBus.getDefault().unregister(this);
-
-        // EventBus.getDefault().removeStickyEvent(TrailAcquiredEvent.class);
     }
 
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(TrailAcquiredEvent event) {
-        //EventBus.getDefault().removeStickyEvent(event);
-
         trails.addAll(event.trails);
-        //Toast.makeText(ListPage.this, "Selected Category Does not Exist!", Toast.LENGTH_SHORT).show();
         initializeViews();
-
     }
 }

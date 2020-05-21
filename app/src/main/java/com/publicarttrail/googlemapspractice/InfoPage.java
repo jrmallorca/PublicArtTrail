@@ -53,7 +53,7 @@ public class InfoPage extends AppCompatActivity {
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
         EventBus.getDefault().removeStickyEvent(ArtworkAcquiredEvent.class);
     }
@@ -61,7 +61,6 @@ public class InfoPage extends AppCompatActivity {
     // Called when a TrailAcquiredEvent has been posted
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     public void onEvent(ArtworkAcquiredEvent event) {
-//        EventBus.getDefault().removeStickyEvent(event);
         Artwork artwork = event.artworks.get(0);
 
         setTitle(artwork.getName());

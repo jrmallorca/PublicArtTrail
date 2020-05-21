@@ -32,7 +32,6 @@ public class Trail {
     public PolylineOptions trailPath;
     public PolylineOptions locationPath;
 
-
     private Hashtable<Integer, Artwork> rankArtwork;
 
     public int getId() {
@@ -88,6 +87,7 @@ public class Trail {
         this.trailArtworks = trailArtworks;
     }
 
+    // Initialize hashtable to order artworks
     private void initRankArtwork() {
         if (rankArtwork == null) {
             rankArtwork = new Hashtable<>();
@@ -98,6 +98,7 @@ public class Trail {
         }
     }
 
+    // Initialize LatLngBuilder to find center of the map
     private void initLatLngBuilder() {
         if (builder == null) {
             builder = new LatLngBounds.Builder();
@@ -110,7 +111,6 @@ public class Trail {
 
     // --- Zoom methods ---
 
-    // TODO: fix zoomIn to show all markers as well as the polyline(trail) in one frame.
     public void zoomIn() {
         if (builder == null) initLatLngBuilder();
 
