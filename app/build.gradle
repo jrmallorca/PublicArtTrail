@@ -60,6 +60,7 @@ android {
             resValue "string", "GOOGLE_MAPS_DIRECTION_KEY", GOOGLE_MAPS_DIRECTION_KEY
         }
 
+        debug {
             testCoverageEnabled true
             buildConfigField "String", "GOOGLE_MAPS_KEY", GOOGLE_MAPS_KEY
             resValue "string", "GOOGLE_MAPS_KEY", GOOGLE_MAPS_KEY
