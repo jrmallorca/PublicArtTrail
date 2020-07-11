@@ -246,7 +246,7 @@ public class TrailsActivity extends AppCompatActivity
         Log.d("supportlogr", "onmapready");
 
         mMap = googleMap;
-        Menu trailsMenu = navigationView.getMenu().getItem(2).getSubMenu();
+        Menu trailsMenu = navigationView.getMenu().getItem(3).getSubMenu();
         setMarkersAndListeners(mMap, trailsMenu);
 
         mMap.setOnMarkerClickListener(this);
@@ -295,7 +295,10 @@ public class TrailsActivity extends AppCompatActivity
                 Intent info = new Intent(TrailsActivity.this, ListPage.class);
                 startActivity(info);
                 break;
-
+            case R.id.nav_about:
+                Intent info1 = new Intent(TrailsActivity.this, AboutActivity.class);
+                startActivity(info1);
+                break;
             default: // Switch trails
                 if (!Objects.equals(currentTrail, trails.get(menuItem.getItemId() - 1))) {
                     // Hide current trail's markers and polyline, and location

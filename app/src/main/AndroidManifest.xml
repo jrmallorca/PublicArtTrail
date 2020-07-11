@@ -16,6 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".AboutActivity"></activity>
         <activity
             android:name=".ListPage"
             android:label="@string/title_activity_list_view"
@@ -41,8 +42,8 @@
 
         <activity
             android:name=".TrailsActivity"
-            android:screenOrientation="nosensor"
-            android:configChanges="keyboardHidden|orientation|screenSize" />
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="nosensor" />
 
         <service android:name=".directionhelpers.LocationService" />
 

@@ -10,6 +10,7 @@
     <!-- Navigation menu -->
     <string name="nav_home">Home</string>
     <string name="nav_trails">Art Trails</string>
+    <string name="nav_about">About</string>
     <string name="nav_artworks">Artworks List</string>
 
     <string name="public_art_trail">Public Art Trail</string>
