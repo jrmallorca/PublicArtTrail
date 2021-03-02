@@ -31,14 +31,18 @@ task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest', 'crea
 android {
     compileSdkVersion 29
     buildToolsVersion "29.0.2"
+
     defaultConfig {
         applicationId "com.publicarttrail.googlemapspractice"
         minSdkVersion 26
         targetSdkVersion 29
+        multiDexEnabled true
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
+
+
 
     }
     testOptions {
@@ -90,6 +94,7 @@ dependencies {
     implementation 'com.squareup.retrofit2:converter-gson:2.7.1'
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'org.greenrobot:eventbus:3.2.0'
+    implementation 'com.android.support:multidex:1.0.3' //enter the latest version
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
